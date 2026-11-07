@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ContentItem } from '@/types';
-import { Maximize2, Minimize2, RotateCw, ExternalLink, Settings, Sparkles, Plus } from 'lucide-react';
+import { Settings, Sparkles, Plus } from 'lucide-react';
 
 interface ContentViewerProps {
   content: ContentItem | null;
@@ -15,20 +15,25 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
   isAdmin,
   onOpenAdmin,
 }) => {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
+  const [dynamicHeight, setDynamicHeight] = useState<number | null>(null);
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
-  const handleReload = () => {
-    setReloadKey((prev) => prev + 1);
-  };
+  useEffect(() => {
+    // 자식 콘텐츠(iframe)로부터 높이 동기화 메시지 수신 (게임/콘텐츠 높이에 맞춰 자동 확장)
+    const handleMessage = (event: MessageEvent) => {
+      if (
+        (event.data?.type === 'SINABRO_RESIZE' || event.data?.type === 'SET_HEIGHT') &&
+        typeof event.data.height === 'number'
+      ) {
+        setDynamicHeight(Math.max(650, event.data.height + 40));
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   if (!content) {
     return (
-      <div className="w-full h-[500px] md:h-[600px] bg-slate-900 rounded-xl border border-slate-800 shadow-sm flex flex-col items-center justify-center p-6 text-center text-slate-400">
+      <div className="w-full h-[520px] md:h-[650px] bg-slate-900 rounded-xl border border-slate-800 shadow-sm flex flex-col items-center justify-center p-6 text-center text-slate-400">
         <div className="w-12 h-12 rounded-2xl bg-slate-800 text-sky-400 flex items-center justify-center mb-3 border border-slate-700">
           <Sparkles className="w-6 h-6" />
         </div>
@@ -53,87 +58,47 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
 
   return (
     <div
+      style={dynamicHeight ? { height: `${dynamicHeight}px` } : undefined}
       className={`relative bg-slate-950 rounded-xl border border-slate-800 shadow-sm flex flex-col transition-all overflow-hidden ${
-        isFullscreen
-          ? 'fixed inset-0 z-50 rounded-none border-none'
-          : 'w-full h-[520px] md:h-[620px]'
+        dynamicHeight ? '' : 'w-full h-[620px] md:h-[780px]'
       }`}
     >
       {/* 콘텐츠 상단 바 */}
       <div className="flex items-center justify-between px-3 py-2 bg-slate-900/95 border-b border-slate-800 text-slate-200 select-none">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
           <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
-          <span className="font-semibold text-[12px] text-slate-100 truncate">
+          <span className="font-semibold text-[12px] text-slate-100 shrink-0 max-w-[120px] sm:max-w-[180px] md:max-w-[220px] truncate">
             {content.title}
           </span>
           {content.description && (
-            <span className="hidden sm:inline text-[11px] text-slate-400 truncate max-w-xs">
+            <span className="text-[11px] text-slate-400 truncate flex-1 min-w-0" title={content.description}>
               - {content.description}
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          {hasUrl && (
-            <>
-              <button
-                type="button"
-                onClick={handleReload}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-                title="콘텐츠 새로고침"
-                aria-label="콘텐츠 새로고침"
-              >
-                <RotateCw className="w-3.5 h-3.5" />
-              </button>
-              <a
-                href={content.vercelUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-                title="새 탭에서 열기"
-                aria-label="새 탭에서 열기"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </>
-          )}
-
           {isAdmin && (
             <button
               type="button"
               onClick={onOpenAdmin}
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 transition-colors ml-1"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 transition-colors"
               title="Vercel URL 편집"
             >
               <Settings className="w-3 h-3" />
               URL 편집
             </button>
           )}
-
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors ml-1"
-            title={isFullscreen ? '전체화면 종료 (ESC)' : '전체화면'}
-            aria-label="전체화면 토글"
-          >
-            {isFullscreen ? (
-              <Minimize2 className="w-3.5 h-3.5" />
-            ) : (
-              <Maximize2 className="w-3.5 h-3.5" />
-            )}
-          </button>
         </div>
       </div>
 
       {/* 실행 영역 */}
-      <div className="relative flex-1 w-full h-full bg-slate-950 flex items-center justify-center">
+      <div className="relative flex-1 w-full h-full bg-slate-950 flex items-center justify-center overflow-hidden">
         {hasUrl ? (
           <iframe
-            key={reloadKey}
             src={content.vercelUrl}
             title={content.title}
-            className="w-full h-full border-0 bg-white"
+            className="w-full h-full border-0 bg-slate-950"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
           />
