@@ -1,69 +1,210 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState, useEffect } from 'react';
+import { Header } from '@/components/layout/Header';
+import { CategoryNav } from '@/components/layout/CategoryNav';
+import { ContentViewer } from '@/components/content/ContentViewer';
+import { ContentMenuList } from '@/components/content/ContentMenuList';
+import { AdSlot } from '@/components/ads/AdSlot';
+import { AdminManageModal } from '@/components/admin/AdminManageModal';
+import { AdConfigModal } from '@/components/admin/AdConfigModal';
+import { Category, ContentItem, AdConfig } from '@/types';
+import {
+  loadLocalCategories,
+  loadLocalContents,
+  loadLocalAdConfig,
+  subscribeToSiteData,
+  saveCategories,
+  saveContents,
+  saveAdConfig,
+} from '@/utils/storage';
+import { useAuth } from '@/context/AuthContext';
+
+export default function HomePage() {
+  const { isAdmin } = useAuth();
+
+  // 상태 관리
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [contents, setContents] = useState<ContentItem[]>([]);
+  const [adConfig, setAdConfig] = useState<AdConfig>({
+    topBannerEnabled: true,
+    sideBannerEnabled: true,
+    bottomBannerEnabled: true,
+    adsenseClientId: '',
+    topSlotId: '',
+    sideSlotId: '',
+    bottomSlotId: '',
+  });
+
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('cat-all');
+  const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
+
+  // 모달 제어 상태
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isAdConfigModalOpen, setIsAdConfigModalOpen] = useState(false);
+
+  // 1. 초기 로컬 캐시 로드
+  useEffect(() => {
+    const localCats = loadLocalCategories();
+    const localContents = loadLocalContents();
+    const localAds = loadLocalAdConfig();
+
+    setCategories(localCats);
+    setContents(localContents);
+    setAdConfig(localAds);
+
+    if (localContents.length > 0) {
+      setSelectedContent(localContents[0]);
+    }
+
+    // 2. Firestore 실시간 동기화 구독 (클라우드 DB에 데이터 있을 시 자동 갱신)
+    const unsubscribe = subscribeToSiteData((data) => {
+      if (data.categories && data.categories.length > 0) {
+        setCategories(data.categories);
+      }
+      if (data.contents) {
+        setContents(data.contents);
+        setSelectedContent((prev) => {
+          if (!prev) return data.contents[0] || null;
+          const found = data.contents.find((c) => c.id === prev.id);
+          return found || data.contents[0] || null;
+        });
+      }
+      if (data.adConfig) {
+        setAdConfig(data.adConfig);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 카테고리 변경 처리 (Firestore + LocalStorage)
+  const handleSaveCategories = async (newCats: Category[]) => {
+    setCategories(newCats);
+    await saveCategories(newCats);
+  };
+
+  // 콘텐츠 목록 변경 처리 (Firestore + LocalStorage)
+  const handleSaveContents = async (newContents: ContentItem[]) => {
+    setContents(newContents);
+    await saveContents(newContents);
+    if (selectedContent) {
+      const updatedCurrent = newContents.find((item) => item.id === selectedContent.id);
+      if (updatedCurrent) {
+        setSelectedContent(updatedCurrent);
+      } else if (newContents.length > 0) {
+        setSelectedContent(newContents[0]);
+      } else {
+        setSelectedContent(null);
+      }
+    } else if (newContents.length > 0) {
+      setSelectedContent(newContents[0]);
+    }
+  };
+
+  // 광고 설정 변경 처리 (Firestore + LocalStorage)
+  const handleSaveAdConfig = async (newAdConfig: AdConfig) => {
+    setAdConfig(newAdConfig);
+    await saveAdConfig(newAdConfig);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 text-[12px]">
+      {/* 헤더 */}
+      <Header
+        onOpenAdmin={() => setIsAdminModalOpen(true)}
+        onOpenAdConfig={() => setIsAdConfigModalOpen(true)}
+      />
+
+      {/* 카테고리 네비게이션 탭 */}
+      <CategoryNav
+        categories={categories}
+        selectedCategoryId={selectedCategoryId}
+        onSelectCategory={setSelectedCategoryId}
+        isAdmin={isAdmin}
+        onOpenAdmin={() => setIsAdminModalOpen(true)}
+      />
+
+      {/* 상단 광고 슬롯 */}
+      {(adConfig.topBannerEnabled && ((adConfig.adsenseClientId && adConfig.topSlotId) || isAdmin)) && (
+        <div className="max-w-7xl mx-auto w-full px-4 pt-3">
+          <AdSlot type="top" adConfig={adConfig} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+      )}
+
+      {/* 메인 콘텐츠 영역 (반응형: 웹, 태블릿, 모바일) */}
+      <main className="max-w-7xl mx-auto w-full px-4 py-4 flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          {/* 중앙/좌측 콘텐츠 뷰어 (웹 8컬럼, 모바일 12컬럼) */}
+          <div className="lg:col-span-8 xl:col-span-8 space-y-4">
+            <ContentViewer
+              content={selectedContent}
+              isAdmin={isAdmin}
+              onOpenAdmin={() => setIsAdminModalOpen(true)}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+            {/* 태블릿/모바일에서는 뷰어 바로 아래에 메뉴 리스트 배치 */}
+            <div className="lg:hidden">
+              <ContentMenuList
+                contents={contents}
+                categories={categories}
+                selectedCategoryId={selectedCategoryId}
+                selectedContentId={selectedContent?.id || null}
+                onSelectContent={setSelectedContent}
+                isAdmin={isAdmin}
+                onOpenAdmin={() => setIsAdminModalOpen(true)}
+              />
+            </div>
+          </div>
+
+          {/* 우측 사이드 영역 (웹 전용: 메뉴 리스트 & 구글 애즈 사이드 배너) */}
+          <div className="hidden lg:flex lg:col-span-4 xl:col-span-4 flex-col gap-4">
+            <ContentMenuList
+              contents={contents}
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              selectedContentId={selectedContent?.id || null}
+              onSelectContent={setSelectedContent}
+              isAdmin={isAdmin}
+              onOpenAdmin={() => setIsAdminModalOpen(true)}
+            />
+
+            <AdSlot type="side" adConfig={adConfig} />
+          </div>
         </div>
       </main>
+
+      {/* 하단 광고 슬롯 */}
+      {(adConfig.bottomBannerEnabled && ((adConfig.adsenseClientId && adConfig.bottomSlotId) || isAdmin)) && (
+        <div className="max-w-7xl mx-auto w-full px-4 pb-4">
+          <AdSlot type="bottom" adConfig={adConfig} />
+        </div>
+      )}
+
+      {/* 푸터 */}
+      <footer className="w-full bg-slate-900 border-t border-slate-800 py-4 text-center text-slate-500 text-[11px]">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-center">
+          <span>© Sinabro. All rights reserved.</span>
+        </div>
+      </footer>
+
+      {/* 관리자 모달창 (카테고리 및 Vercel 콘텐츠 URL 관리) */}
+      <AdminManageModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        categories={categories}
+        contents={contents}
+        onSaveCategories={handleSaveCategories}
+        onSaveContents={handleSaveContents}
+      />
+
+      {/* 관리자 구글 애즈 설정 모달창 */}
+      <AdConfigModal
+        isOpen={isAdConfigModalOpen}
+        onClose={() => setIsAdConfigModalOpen(false)}
+        adConfig={adConfig}
+        onSave={handleSaveAdConfig}
+      />
     </div>
   );
 }
