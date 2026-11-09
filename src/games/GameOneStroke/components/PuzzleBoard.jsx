@@ -310,27 +310,9 @@ export default function PuzzleBoard({
         {nodes.map((node) => {
           const isVisited = visitedNodes.includes(node.id);
           const isCurrent = lastVisitedNode?.id === node.id;
-          const isSpecialStart =
-            visitedNodes.length === 0 &&
-            stageData.oddNodes?.length === 2 &&
-            stageData.validStartNodes?.includes(node.id);
 
           return (
             <g key={`node-${node.id}`} className="cursor-pointer">
-              {/* 시작점 힌트 링 (홀수점 2개인 경우 필수 시작점 강조) */}
-              {isSpecialStart && (
-                <circle
-                  cx={node.x}
-                  cy={node.y}
-                  r="18"
-                  fill="none"
-                  stroke="#f59e0b"
-                  strokeWidth="2"
-                  strokeDasharray="4 3"
-                  className="opacity-90"
-                />
-              )}
-
               {/* 노드 주변 펄스 효과 (현재 활성 노드) */}
               {isCurrent && (
                 <circle
@@ -350,17 +332,9 @@ export default function PuzzleBoard({
                 cy={node.y}
                 r="12"
                 fill={isVisited ? '#0f172a' : '#1e293b'}
-                stroke={
-                  isCurrent
-                    ? '#38bdf8'
-                    : isVisited
-                    ? '#818cf8'
-                    : isSpecialStart
-                    ? '#f59e0b'
-                    : '#475569'
-                }
-                strokeWidth={isCurrent || isSpecialStart ? '3' : '2.5'}
-                filter={isVisited || isSpecialStart ? 'url(#node-glow)' : undefined}
+                stroke={isCurrent ? '#38bdf8' : isVisited ? '#818cf8' : '#475569'}
+                strokeWidth={isCurrent ? '3.5' : '2.5'}
+                filter={isVisited ? 'url(#node-glow)' : undefined}
                 className="transition-all duration-200"
               />
 
@@ -369,15 +343,7 @@ export default function PuzzleBoard({
                 cx={node.x}
                 cy={node.y}
                 r={isCurrent ? '6' : '4.5'}
-                fill={
-                  isCurrent
-                    ? '#ffffff'
-                    : isVisited
-                    ? '#38bdf8'
-                    : isSpecialStart
-                    ? '#fbbf24'
-                    : '#94a3b8'
-                }
+                fill={isCurrent ? '#ffffff' : isVisited ? '#38bdf8' : '#94a3b8'}
                 className="transition-all duration-200"
               />
             </g>
