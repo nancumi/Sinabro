@@ -22,6 +22,26 @@ export default function PuzzleBoard({
 
   const svgRef = useRef(null);
 
+  // 모바일 브라우저 화면 스크롤/새로고침(Pull-to-refresh) 제스처 완전 차단
+  useEffect(() => {
+    const svgElem = svgRef.current;
+    if (!svgElem) return;
+
+    const blockTouchScroll = (e) => {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+    };
+
+    svgElem.addEventListener('touchstart', blockTouchScroll, { passive: false });
+    svgElem.addEventListener('touchmove', blockTouchScroll, { passive: false });
+
+    return () => {
+      svgElem.removeEventListener('touchstart', blockTouchScroll);
+      svgElem.removeEventListener('touchmove', blockTouchScroll);
+    };
+  }, []);
+
   // 스테이지 변경 시 초기화
   useEffect(() => {
     setVisitedNodes([]);
@@ -106,12 +126,13 @@ export default function PuzzleBoard({
 
   // 포인터 다운 (시작점 지정)
   const handlePointerDown = (e) => {
+    try {
+      if (e.cancelable) e.preventDefault();
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch {}
+
     const coords = getSvgCoordinates(e);
     if (!coords) return;
-
-    try {
-      e.target.setPointerCapture?.(e.pointerId);
-    } catch {}
 
     const clickedNode = findNodeAtPosition(coords.x, coords.y);
     if (clickedNode) {
@@ -127,6 +148,10 @@ export default function PuzzleBoard({
 
   // 포인터 이동 (선 잇기 트래킹)
   const handlePointerMove = (e) => {
+    try {
+      if (e.cancelable) e.preventDefault();
+    } catch {}
+
     if (!isPointerDown || visitedNodes.length === 0) return;
     const coords = getSvgCoordinates(e);
     if (!coords) return;
@@ -189,7 +214,10 @@ export default function PuzzleBoard({
       : null;
 
   return (
-    <div className="relative w-full aspect-square max-w-[360px] sm:max-w-[380px] mx-auto select-none touch-none">
+    <div
+      className="relative w-full aspect-square max-w-[360px] sm:max-w-[380px] mx-auto select-none touch-none"
+      style={{ touchAction: 'none', overscrollBehavior: 'none' }}
+    >
       <svg
         ref={svgRef}
         viewBox="0 0 400 400"
@@ -197,8 +225,8 @@ export default function PuzzleBoard({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="w-full h-full rounded-2xl bg-slate-950/80 border border-slate-800 shadow-2xl cursor-crosshair overflow-visible"
-        style={{ touchAction: 'none' }}
+        className="w-full h-full rounded-2xl bg-slate-950/80 border border-slate-800 shadow-2xl cursor-crosshair overflow-visible touch-none select-none"
+        style={{ touchAction: 'none', overscrollBehavior: 'none', WebkitTouchCallout: 'none' }}
       >
         <defs>
           {/* 네온 글로우 필터 */}

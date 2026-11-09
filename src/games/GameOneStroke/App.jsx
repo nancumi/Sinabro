@@ -78,12 +78,14 @@ export default function App() {
 
   // 다음 스테이지 이동
   const handleNextStage = useCallback(() => {
+    // 아직 현재 스테이지를 완료하지 못했다면 다음 단계로 이동 불가
+    if (currentStage >= maxStageReached) return;
     try {
       oneStrokeSound.playClick();
     } catch { }
     setIsCleared(false);
     setCurrentStage((s) => s + 1);
-  }, []);
+  }, [currentStage, maxStageReached]);
 
   // 이전 스테이지 이동
   const handlePrevStage = useCallback(() => {
@@ -179,8 +181,9 @@ export default function App() {
           <button
             type="button"
             onClick={handleNextStage}
-            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer active:scale-95"
-            title="다음 스테이지"
+            disabled={currentStage >= maxStageReached}
+            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer active:scale-95"
+            title={currentStage >= maxStageReached ? '현재 스테이지를 먼저 완료해야 합니다' : '다음 스테이지'}
           >
             <ChevronRight size={16} />
           </button>

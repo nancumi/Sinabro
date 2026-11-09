@@ -53,8 +53,6 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [hasNewRecord, setHasNewRecord] = useState(false);
 
-  // 스와이프/드래그 제스처 감지 ref
-  const gestureStartRef = useRef({ x: 0, y: 0, time: 0, isDown: false });
   const isProcessingRef = useRef(false);
 
   // 격자 크기 선택 후 게임 시작
@@ -191,58 +189,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleMove]);
 
-  // 터치 & 마우스 드래그 공통 처리
-  const processGestureEnd = (endX, endY) => {
-    const dx = endX - gestureStartRef.current.x;
-    const dy = endY - gestureStartRef.current.y;
-    const dt = Date.now() - gestureStartRef.current.time;
-
-    const minDistance = 20;
-    if (Math.abs(dx) < minDistance && Math.abs(dy) < minDistance) return;
-    if (dt > 800) return;
-
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 0) handleMove('RIGHT');
-      else handleMove('LEFT');
-    } else {
-      if (dy > 0) handleMove('DOWN');
-      else handleMove('UP');
-    }
-  };
-
-  const handleTouchStart = (e) => {
-    if (e.touches.length !== 1) return;
-    const touch = e.touches[0];
-    gestureStartRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now(),
-      isDown: true,
-    };
-  };
-
-  const handleTouchEnd = (e) => {
-    if (e.changedTouches.length !== 1) return;
-    const touch = e.changedTouches[0];
-    processGestureEnd(touch.clientX, touch.clientY);
-  };
-
-  const handleMouseDown = (e) => {
-    if (e.button !== 0) return;
-    gestureStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      time: Date.now(),
-      isDown: true,
-    };
-  };
-
-  const handleMouseUp = (e) => {
-    if (!gestureStartRef.current.isDown) return;
-    gestureStartRef.current.isDown = false;
-    processGestureEnd(e.clientX, e.clientY);
-  };
-
   // 격자별 grid CSS 클래스 매핑
   const gridClassMap = {
     4: 'grid-cols-4 grid-rows-4 gap-2 sm:gap-2.5',
@@ -251,13 +197,7 @@ export default function App() {
   };
 
   return (
-    <div
-      className="flex flex-col items-center justify-center w-full w-full bg-slate-950 px-3 py-2 text-slate-200 select-none touch-none"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-    >
+    <div className="flex flex-col items-center justify-center w-full bg-slate-950 px-3 py-2 text-slate-200 select-none">
       {/* 중앙 핵심 콘텐츠 컨테이너 */}
       <div className="w-full max-w-[420px] flex flex-col items-center gap-2">
         {/* 게임 화면 바깥 최상단 우측 BEST 표시 영역 */}
@@ -436,9 +376,8 @@ export default function App() {
           <div>
             <span className="font-semibold text-slate-100">1. 조작 방법:</span>
             <ul className="list-disc list-inside mt-1 space-y-0.5 text-slate-300">
+              <li>버튼: 화면 하단의 대형 방향 화살표(▲, ▼, ◀, ▶) 클릭</li>
               <li>키보드: 방향키(↑, ↓, ←, →) 또는 W, A, S, D</li>
-              <li>화면: 격자판을 마우스로 드래그하거나 스마트폰으로 스와이프</li>
-              <li>버튼: 격자판 아래의 대형 방향 화살표 클릭</li>
             </ul>
           </div>
           <div>

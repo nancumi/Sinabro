@@ -120,13 +120,23 @@ export default function HomePage() {
     await saveAdConfig(newAdConfig);
   };
 
-  // 콘텐츠 선택 시 URL 파라미터 자동 갱신 (?title=...)
+  // 콘텐츠 선택 시 URL 파라미터 자동 갱신 (?title=...) 및 게임 화면으로 스크롤 이동
   const handleSelectContent = (item: ContentItem) => {
     setSelectedContent(item);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.set('title', item.title);
       window.history.replaceState(null, '', url.toString());
+
+      // 모바일 등에서 목록 선택 시 상단 게임 화면으로 부드럽게 이동
+      setTimeout(() => {
+        const viewer = document.getElementById('game-viewer-section');
+        if (viewer) {
+          viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 50);
     }
   };
 
@@ -158,7 +168,7 @@ export default function HomePage() {
       <main className="max-w-7xl mx-auto w-full px-4 py-4 flex-1">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           {/* 중앙/좌측 콘텐츠 뷰어 (웹 8컬럼, 모바일 12컬럼) */}
-          <div className="lg:col-span-8 xl:col-span-8 space-y-4">
+          <div id="game-viewer-section" className="lg:col-span-8 xl:col-span-8 space-y-4">
             <ContentViewer
               content={selectedContent}
               isAdmin={isAdmin}
