@@ -218,33 +218,38 @@ export default function App() {
   return (
     <div
       onClick={handleScreenTouch}
-      className="relative w-screen h-screen bg-neutral-950 flex items-center justify-center overflow-hidden select-none p-4"
+      className="relative w-full max-w-md mx-auto bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-center overflow-hidden select-none text-[12px] my-2"
     >
       {/* 배경 장식 은은한 그리드/비네트 */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(30,41,59,0.5)_0%,rgba(10,10,10,0.95)_100%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(30,41,59,0.3)_0%,rgba(10,10,10,0.8)_100%)] pointer-events-none" />
 
       {/* 중앙 핵심 콘텐츠 컨테이너 */}
       <div
-        className="relative z-10 flex flex-col items-center justify-center w-full max-w-[380px] min-h-[420px]"
+        className="relative z-10 flex flex-col items-center justify-center w-full min-h-[360px]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 1. 시작 전 (idle) 화면: 스폿을 숨기고 직관적인 타이틀과 설명, 추첨 준비 버튼 배치 */}
         {gameState === 'idle' && (
-          <div className="flex flex-col items-center justify-center text-center p-6 bg-neutral-900/70 rounded-3xl border border-neutral-800 shadow-2xl backdrop-blur-sm animate-fade-in w-full max-w-[320px]">
-            <h2 className="text-[14px] font-bold text-neutral-100 mb-3 flex items-center justify-center gap-1.5">
-              <span>👆</span> 손가락 복불복
-            </h2>
-            <p className="text-[12px] text-neutral-200 font-medium mb-2 leading-relaxed whitespace-pre-line">
-              게임이 시작되면 각자 원하는 스폿 1개씩을 손가락으로 찜하세요!
+          <div className="flex flex-col items-center justify-center text-center p-4 w-full animate-fade-in">
+            <div className="pb-3 border-b border-slate-800/80 w-full mb-4">
+              <span className="text-[11px] font-semibold tracking-wider text-indigo-400 uppercase">
+                TOUCH ROULETTE
+              </span>
+              <h2 className="text-[18px] font-black tracking-tight text-white mt-0.5">
+                손가락 복불복
+              </h2>
+            </div>
+            <p className="text-[12px] text-slate-200 font-medium mb-2 leading-relaxed">
+              게임이 시작되면 각자 원하는 스폿 1개씩을 손가락으로 찜하세요!<br />
               그중 선택받은 당첨자 1명이 나옵니다.
             </p>
-            <p className="text-[11px] text-neutral-400 mb-5 leading-normal">
-              (추첨 준비 버튼을 누른 후 3초 안에 올려주세요 · 모바일 전용)
+            <p className="text-[11px] text-slate-400 mb-6">
+              (추첨 준비 버튼을 누른 후 3초 안에 올려주세요 · 모바일/터치 권장)
             </p>
             <button
               type="button"
               onClick={handleStart}
-              className="w-full py-3 px-6 rounded-2xl bg-neutral-100 hover:bg-white text-neutral-950 font-bold text-[12px] tracking-wider shadow-[0_0_20px_rgba(255,255,255,0.25)] hover:shadow-[0_0_28px_rgba(255,255,255,0.45)] active:scale-95 transition-all"
+              className="w-full py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[12px] tracking-wider shadow-md shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
             >
               추첨 준비
             </button>
@@ -254,7 +259,7 @@ export default function App() {
         {/* 2. 게임 진행 (countdown, eliminating, result) 화면: 3x3 터치 스폿 그리드 노출 */}
         {gameState !== 'idle' && (
           <>
-            <div className="grid grid-cols-3 gap-5 sm:gap-6 w-full aspect-square p-2 place-items-center animate-fade-in">
+            <div className="grid grid-cols-3 gap-4 sm:gap-5 w-full max-w-[300px] aspect-square p-2 place-items-center animate-fade-in">
               {Array.from({ length: 9 }).map((_, index) => {
                 const isPressed = pressedSpots.has(index);
                 const isWinner = winnerSpot === index;
@@ -270,7 +275,7 @@ export default function App() {
                     onPointerUp={(e) => handleSpotPointerUp(index, e)}
                     onPointerCancel={(e) => handleSpotPointerUp(index, e)}
                     className={`relative flex items-center justify-center rounded-full transition-all duration-300 select-none
-                      w-[72px] h-[72px] sm:w-[84px] sm:h-[84px]
+                      w-[68px] h-[68px] sm:w-[76px] sm:h-[76px]
                       ${isVanish ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100'}
                       ${isPressed ? 'scale-95' : ''}
                     `}

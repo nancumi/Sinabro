@@ -41,35 +41,35 @@ export default function Step1Players({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-dark-700/90 backdrop-blur-md rounded-3xl p-6 sm:p-7 border border-dark-border shadow-glow-card">
+    <div className="w-full max-w-md mx-auto bg-slate-900/90 backdrop-blur-xl rounded-3xl p-6 border border-slate-800 shadow-2xl space-y-4 text-[12px]">
       {/* Subtitle & Title */}
-      <div className="mb-6">
-        <span className="text-[11px] font-extrabold tracking-widest text-indigo-400 uppercase">
-          ROULETTE BATTLE
-        </span>
-        <h2 className="text-2xl font-bold text-white tracking-tight mt-1">
-          게임 설정
-        </h2>
+      <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+        <div>
+          <span className="text-[11px] font-semibold tracking-wider text-indigo-400 uppercase">
+            ROULETTE BATTLE
+          </span>
+          <h2 className="text-[18px] font-black tracking-tight text-white mt-0.5">
+            게임 설정
+          </h2>
+        </div>
       </div>
 
-      <div className="border-t border-dark-border/60 mb-6"></div>
-
       {/* Players Counter Header */}
-      <div className="flex items-center justify-between mb-4">
-        <label className="text-sm font-semibold text-slate-200">
+      <div className="flex items-center justify-between">
+        <label className="text-[11px] font-medium text-slate-400">
           플레이어 설정 ({players.length}명)
         </label>
-        <div className="flex items-center bg-dark-800 border border-dark-border rounded-xl px-1.5 py-1">
+        <div className="flex items-center gap-1.5 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60">
           <button
             type="button"
             onClick={() => handlePlayerCountChange(-1)}
             disabled={players.length <= 1}
             aria-label="인원 감소"
-            className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed rounded-lg hover:bg-dark-700 transition"
+            className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700/60 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition"
           >
             <Minus className="w-3.5 h-3.5" />
           </button>
-          <span className="w-8 text-center text-sm font-bold text-white">
+          <span className="w-6 text-center text-[12px] font-bold text-white">
             {players.length}
           </span>
           <button
@@ -77,7 +77,7 @@ export default function Step1Players({
             onClick={() => handlePlayerCountChange(1)}
             disabled={players.length >= 16}
             aria-label="인원 증가"
-            className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed rounded-lg hover:bg-dark-700 transition"
+            className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700/60 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -85,14 +85,14 @@ export default function Step1Players({
       </div>
 
       {/* Dynamic Player Name Inputs */}
-      <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1 mb-6">
+      <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
         {players.map((player, index) => (
           <div
             key={index}
-            className="flex items-center gap-2.5 bg-dark-input/90 border border-dark-border/80 focus-within:border-indigo-500/80 rounded-2xl px-3.5 py-2.5 transition-all shadow-inner"
+            className="flex items-center gap-2 bg-slate-800/60 border border-slate-700/60 focus-within:border-indigo-500/80 rounded-xl px-3 py-2 transition-all"
           >
             {/* Number badge */}
-            <div className="w-6 h-6 rounded-full bg-[#1e2942] flex items-center justify-center text-indigo-400 text-xs font-bold shrink-0">
+            <div className="w-5 h-5 rounded-full bg-slate-700/80 flex items-center justify-center text-indigo-300 text-[11px] font-bold shrink-0">
               {index + 1}
             </div>
 
@@ -103,7 +103,7 @@ export default function Step1Players({
               onChange={(e) => handlePlayerNameChange(index, e.target.value)}
               placeholder={`플레이어 ${index + 1}`}
               maxLength={15}
-              className="flex-1 bg-transparent text-sm font-medium text-white placeholder-slate-500 focus:outline-none"
+              className="flex-1 bg-transparent text-[12px] font-medium text-slate-100 placeholder-slate-500 focus:outline-none"
             />
 
             {/* Delete button if more than 1 player */}
@@ -114,7 +114,7 @@ export default function Step1Players({
                 aria-label={`${player} 삭제`}
                 className="text-slate-500 hover:text-rose-400 p-1 transition"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
@@ -125,16 +125,16 @@ export default function Step1Players({
       <button
         type="button"
         onClick={handleProceed}
-        className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:from-indigo-500 hover:to-indigo-500 text-white font-bold text-base flex items-center justify-center gap-2 shadow-glow-primary active:scale-[0.99] transition-all duration-200 mb-6"
+        className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[12px] flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/20 active:scale-[0.99] transition-all cursor-pointer"
       >
         <span>다음 단계 (룰렛 내용 입력)</span>
-        <ArrowRight className="w-5 h-5" />
+        <ArrowRight className="w-4 h-4" />
       </button>
 
       {/* Info Notice Box */}
-      <div className="bg-dark-800/80 border border-dark-border/80 rounded-2xl p-3.5 flex items-start gap-3">
-        <AlertCircle className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-        <p className="text-xs text-slate-400 leading-relaxed">
+      <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-3 flex items-start gap-2.5">
+        <AlertCircle className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
+        <p className="text-[11px] text-slate-400 leading-relaxed">
           참여할 플레이어 인원을 설정하고 다음 단계에서 룰렛 내용을 자유롭게 구성하세요.
         </p>
       </div>

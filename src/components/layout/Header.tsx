@@ -21,11 +21,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin, onOpenAdConfig }) =
             <Sparkles className="w-4 h-4" />
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-[15px] text-slate-100 tracking-tight leading-none">
-              Sinabro
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-black text-[15px] text-white tracking-tight leading-none">
+                WS
+              </span>
+              <span className="text-[12px] font-semibold text-slate-300 leading-none">
+                With Sinabro
+              </span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 border border-sky-500/30 leading-none">
+                AI
+              </span>
+            </div>
             <span className="text-[11px] text-slate-400 leading-none mt-1">
-              시간 때우기를 할 수 있는 곳
+              스마트하게 즐기는 시간 때우기
             </span>
           </div>
         </div>

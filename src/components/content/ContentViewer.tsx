@@ -97,10 +97,10 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
       </div>
 
       {/* 실행 영역 (네이티브 컴포넌트 직접 실행 또는 외부 URL fallback) */}
-      <div className="relative flex-1 w-full bg-slate-950 flex flex-col items-center justify-center">
+      <div className="relative w-full bg-slate-950 flex flex-col items-center">
         {NativeGameComponent ? (
           // ★ 아이프레임 없이 게임 크기에 딱 맞춰 자연스럽게 렌더링 ★
-          <div className="w-full flex justify-center py-2 sm:py-3">
+          <div className="w-full flex justify-center py-1 sm:py-2 px-1 sm:px-2">
             <NativeGameComponent />
           </div>
         ) : hasUrl ? (

@@ -30,7 +30,7 @@ export default function App() {
   }
 
   return (
-    <div className="w-full bg-[#0f172a] text-slate-100 text-[12px] flex items-center justify-center p-4 selection:bg-indigo-500/30">
+    <div className="w-full bg-transparent text-slate-100 text-[12px] flex items-center justify-center p-0 selection:bg-indigo-500/30">
       <main className="w-full max-w-md mx-auto">
         {phase === 'setup' && (
           <ParticipantSetup onStartGame={handleStartGame} />

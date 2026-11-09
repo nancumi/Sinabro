@@ -169,7 +169,7 @@ export default function App() {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  // 슬라이드 이동 처리
+  // 슬라이드 이동 처리 (인접 타일 뿐만 아니라 같은 행/열의 타일 클릭 시 다중 동시 이동 지원)
   const moveTile = useCallback((tilePos) => {
     if (isSolved || !gridSize || tiles.length === 0) return;
 
@@ -181,11 +181,36 @@ export default function App() {
     const emptyRow = Math.floor(currentEmpty / gridSize);
     const emptyCol = currentEmpty % gridSize;
 
-    const isAdjacent =
-      (Math.abs(tileRow - emptyRow) === 1 && tileCol === emptyCol) ||
-      (Math.abs(tileCol - emptyCol) === 1 && tileRow === emptyRow);
+    // 같은 행도 아니고 같은 열도 아니면 이동 불가
+    if (tileRow !== emptyRow && tileCol !== emptyCol) return;
 
-    if (!isAdjacent) return;
+    const nextTiles = [...tiles];
+
+    if (tileRow === emptyRow) {
+      // 같은 행: 빈칸 방향으로 타일들을 한 칸씩 밀어냄
+      if (tileCol < emptyCol) {
+        for (let c = emptyCol; c > tileCol; c--) {
+          nextTiles[tileRow * gridSize + c] = nextTiles[tileRow * gridSize + (c - 1)];
+        }
+      } else {
+        for (let c = emptyCol; c < tileCol; c++) {
+          nextTiles[tileRow * gridSize + c] = nextTiles[tileRow * gridSize + (c + 1)];
+        }
+      }
+      nextTiles[tileRow * gridSize + tileCol] = emptyTile;
+    } else if (tileCol === emptyCol) {
+      // 같은 열: 빈칸 방향으로 타일들을 한 칸씩 밀어냄 (11, 12, 13번 동시 밀기 지원)
+      if (tileRow < emptyRow) {
+        for (let r = emptyRow; r > tileRow; r--) {
+          nextTiles[r * gridSize + tileCol] = nextTiles[(r - 1) * gridSize + tileCol];
+        }
+      } else {
+        for (let r = emptyRow; r < tileRow; r++) {
+          nextTiles[r * gridSize + tileCol] = nextTiles[(r + 1) * gridSize + tileCol];
+        }
+      }
+      nextTiles[tileRow * gridSize + tileCol] = emptyTile;
+    }
 
     playSlideSound();
     setMoves((m) => m + 1);
@@ -193,9 +218,6 @@ export default function App() {
       setIsTimerRunning(true);
     }
 
-    const nextTiles = [...tiles];
-    nextTiles[currentEmpty] = tiles[tilePos];
-    nextTiles[tilePos] = emptyTile;
     setTiles(nextTiles);
 
     const solved = nextTiles.every((val, idx) => val === idx);
@@ -263,10 +285,10 @@ export default function App() {
         }
 
         const isMatch =
-          (swipeDir === 'right' && emptyRow === tileRow && emptyCol === tileCol + 1) ||
-          (swipeDir === 'left' && emptyRow === tileRow && emptyCol === tileCol - 1) ||
-          (swipeDir === 'down' && emptyCol === tileCol && emptyRow === tileRow + 1) ||
-          (swipeDir === 'up' && emptyCol === tileCol && emptyRow === tileRow - 1);
+          (swipeDir === 'right' && emptyRow === tileRow && emptyCol > tileCol) ||
+          (swipeDir === 'left' && emptyRow === tileRow && emptyCol < tileCol) ||
+          (swipeDir === 'down' && emptyCol === tileCol && emptyRow > tileRow) ||
+          (swipeDir === 'up' && emptyCol === tileCol && emptyRow < tileRow);
 
         if (isMatch) {
           moveTile(pos);

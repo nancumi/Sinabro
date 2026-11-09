@@ -4,8 +4,8 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ModalProvider } from '@/context/ModalContext';
 
 export const metadata: Metadata = {
-  title: 'Sinabro - 시간 때우기를 할 수 있는 곳',
-  description: '다양한 미니게임과 유용한 콘텐츠를 시나브로 즐길 수 있는 공간입니다.',
+  title: 'WS With Sinabro - 스마트하게 즐기는 시간 때우기',
+  description: '다양한 미니게임과 유용한 콘텐츠를 시나브로 스마트하게 즐길 수 있는 공간입니다.',
 };
 
 export default function RootLayout({

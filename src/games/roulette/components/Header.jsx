@@ -42,43 +42,43 @@ export default function Header({ currentStep, onReset }) {
           <button
             onClick={handleToggleSound}
             aria-label="소리 켜기/끄기"
-            className="p-2 rounded-xl bg-dark-700 hover:bg-dark-600 text-slate-300 hover:text-white border border-dark-border transition"
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
             title={muted ? '소리 켜기' : '음소거'}
           >
-            {muted ? <VolumeX className="w-4 h-4 text-slate-400" /> : <Volume2 className="w-4 h-4 text-amber-400" />}
+            {muted ? <VolumeX className="w-3.5 h-3.5 text-slate-400" /> : <Volume2 className="w-3.5 h-3.5 text-amber-400" />}
           </button>
 
           {currentStep > 1 && (
             <button
               onClick={onReset}
               aria-label="처음부터 다시하기"
-              className="p-2 rounded-xl bg-dark-700 hover:bg-dark-600 text-slate-300 hover:text-rose-400 border border-dark-border transition"
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-rose-400 border border-slate-700 transition"
               title="처음으로"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
       </div>
 
       {/* Step Indicator */}
-      <div className="grid grid-cols-3 gap-2 bg-dark-800/80 backdrop-blur p-1.5 rounded-2xl border border-dark-border">
+      <div className="grid grid-cols-3 gap-2 bg-slate-900/80 backdrop-blur p-1 rounded-xl border border-slate-800">
         {steps.map((s) => {
           const isActive = currentStep === s.number;
           const isPassed = currentStep > s.number;
           return (
             <div
               key={s.number}
-              className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all ${
+              className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[11px] font-semibold transition-all ${
                 isActive
-                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-md'
+                  ? 'bg-indigo-600 text-white shadow-xs'
                   : isPassed
-                  ? 'bg-dark-700/60 text-indigo-300'
+                  ? 'bg-slate-800/60 text-indigo-300'
                   : 'text-slate-400'
               }`}
             >
               <span
-                className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
+                className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${
                   isActive ? 'bg-white text-indigo-700 font-bold' : isPassed ? 'bg-indigo-900/80 text-indigo-300' : 'bg-slate-800 text-slate-400'
                 }`}
               >
