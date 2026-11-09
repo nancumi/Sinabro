@@ -128,13 +128,18 @@ export default function HomePage() {
       url.searchParams.set('title', item.title);
       window.history.replaceState(null, '', url.toString());
 
-      // 모바일 등에서 목록 선택 시 상단 게임 화면으로 부드럽게 이동
+      // 모바일의 경우 화면 맨 위에서 150px 스크롤하여 게임 화면을 정확히 맞춤
       setTimeout(() => {
-        const viewer = document.getElementById('game-viewer-section');
-        if (viewer) {
-          viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const isMobile = window.innerWidth < 1024;
+        if (isMobile) {
+          window.scrollTo({ top: 150, behavior: 'smooth' });
         } else {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          const viewer = document.getElementById('game-viewer-section');
+          if (viewer) {
+            viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
         }
       }, 50);
     }
