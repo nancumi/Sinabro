@@ -10,3 +10,76 @@ body {
   color: var(--foreground);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
+
+/* LED 전광판 애니메이션 & 오버레이 */
+@keyframes ledMarqueeLeft {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes ledMarqueeRight {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes ledBlink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0.05;
+  }
+}
+
+@keyframes ledBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-24px);
+  }
+}
+
+@keyframes ledGlowPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px currentColor) brightness(1.2);
+  }
+  50% {
+    filter: drop-shadow(0 0 25px currentColor) drop-shadow(0 0 45px currentColor) brightness(1.8);
+  }
+}
+
+@keyframes ledGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.led-dot-pattern {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.75) 30%, transparent 35%);
+  background-size: 6px 6px;
+}
+
+.led-scanline-pattern {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.35),
+    rgba(0, 0, 0, 0.35) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
