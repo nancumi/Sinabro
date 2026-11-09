@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '@/components/common/Modal';
+import { Pagination } from '@/components/common/Pagination';
 import { Category, ContentItem } from '@/types';
 import { Trash2, Plus, Edit2, Link as LinkIcon, FolderPlus } from 'lucide-react';
 import { useAppModal } from '@/context/ModalContext';
@@ -37,6 +38,31 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
   const [contentVercelUrl, setContentVercelUrl] = useState('');
   const [contentDesc, setContentDesc] = useState('');
   const [editingContentId, setEditingContentId] = useState<string | null>(null);
+
+  // 콘텐츠 목록 카테고리 필터 및 페이지네이션 (5개 단위)
+  const [selectedFilterCatId, setSelectedFilterCatId] = useState<string>('cat-all');
+  const [contentPage, setContentPage] = useState<number>(1);
+  const ITEMS_PER_PAGE = 5;
+
+  const filteredContents = useMemo(() => {
+    if (selectedFilterCatId === 'cat-all') {
+      return contents;
+    }
+    return contents.filter((item) => item.categoryId === selectedFilterCatId);
+  }, [contents, selectedFilterCatId]);
+
+  const totalPages = Math.ceil(filteredContents.length / ITEMS_PER_PAGE);
+
+  const paginatedContents = useMemo(() => {
+    const start = (contentPage - 1) * ITEMS_PER_PAGE;
+    return filteredContents.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredContents, contentPage]);
+
+  useEffect(() => {
+    if (contentPage > totalPages && totalPages > 0) {
+      setContentPage(totalPages);
+    }
+  }, [totalPages, contentPage]);
 
   // --- 카테고리 관련 핸들러 ---
   const handleAddCategory = () => {
@@ -353,20 +379,51 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
               </div>
             </div>
 
-            {/* 등록된 콘텐츠 목록 */}
-            <div className="border border-slate-800 rounded-lg overflow-hidden divide-y divide-slate-800 max-h-[35vh] overflow-y-auto">
-              {contents.length === 0 ? (
+            {/* 카테고리별 분류 필터 바 */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+              {categories.map((cat) => {
+                const count =
+                  cat.id === 'cat-all'
+                    ? contents.length
+                    : contents.filter((c) => c.categoryId === cat.id).length;
+                const isSelected = selectedFilterCatId === cat.id;
+
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedFilterCatId(cat.id);
+                      setContentPage(1);
+                    }}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition-colors border ${
+                      isSelected
+                        ? 'bg-sky-950 text-sky-200 border-sky-600 font-semibold'
+                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200 hover:bg-slate-800'
+                    }`}
+                  >
+                    {cat.name} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 등록된 콘텐츠 목록 (5개씩 표시, 스크롤바 방지) */}
+            <div className="border border-slate-800 rounded-lg overflow-hidden divide-y divide-slate-800 bg-slate-900/40">
+              {filteredContents.length === 0 ? (
                 <div className="p-4 text-center text-slate-500 text-[12px]">
-                  등록된 콘텐츠가 없습니다. 위 입력창에서 제작하신 Vercel 주소를 등록해 보세요.
+                  {selectedFilterCatId === 'cat-all'
+                    ? '등록된 콘텐츠가 없습니다. 위 입력창에서 제작하신 Vercel 주소를 등록해 보세요.'
+                    : '해당 카테고리에 등록된 콘텐츠가 없습니다.'}
                 </div>
               ) : (
-                contents.map((item) => {
+                paginatedContents.map((item) => {
                   const catName = categories.find((c) => c.id === item.categoryId)?.name || '미지정';
                   return (
                     <div key={item.id} className="flex items-center justify-between p-2.5 hover:bg-slate-800/40">
                       <div className="space-y-0.5 flex-1 min-w-0 mr-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] px-1.5 py-0.5 rounded bg-sky-950/70 text-sky-300 border border-sky-800/60">
+                          <span className="text-[11px] px-1.5 py-0.5 rounded bg-sky-950/70 text-sky-300 border border-sky-800/60 shrink-0">
                             {catName}
                           </span>
                           <span className="font-semibold text-slate-200 text-[12px] truncate">
@@ -405,6 +462,17 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
                 })
               )}
             </div>
+
+            {/* 페이지네이션 (5개 단위 블록, << < 1 2 3 4 5 > >>) */}
+            {totalPages > 1 && (
+              <div className="pt-1">
+                <Pagination
+                  currentPage={contentPage}
+                  totalPages={totalPages}
+                  onPageChange={setContentPage}
+                />
+              </div>
+            )}
           </div>
         )}
 
