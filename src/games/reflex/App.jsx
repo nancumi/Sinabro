@@ -125,16 +125,16 @@ export default function App() {
   return (
     <div
       onClick={handleScreenInteraction}
-      className={`w-full w-full flex items-center justify-center p-6 select-none cursor-pointer transition-colors duration-200 overflow-hidden ${getScreenStyles()}`}
+      className={`w-full min-h-[460px] sm:min-h-[500px] flex flex-col items-center justify-center p-6 select-none cursor-pointer transition-colors duration-200 overflow-hidden rounded-2xl border border-slate-800 shadow-inner ${getScreenStyles()}`}
     >
-      <div className="w-full max-w-lg flex flex-col items-center justify-center text-center">
+      <div className="w-full max-w-md flex flex-col items-center justify-center text-center">
 
         {/* 역대 최고기록 상시 표시 (중앙 상단 뱃지) */}
-        <div className="mb-6 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/80 border border-slate-700/80 text-[12px] shadow-lg backdrop-blur-sm">
-          <Trophy size={14} className="text-amber-400" />
+        <div className="mb-6 flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/80 text-[11px] shadow-md backdrop-blur-sm">
+          <Trophy size={13} className="text-amber-400" />
           <span className="text-slate-300">역대 최고기록:</span>
           {bestScore !== null ? (
-            <span className="font-mono font-bold text-amber-300">
+            <span className="font-mono font-bold text-amber-300 text-[12px]">
               {bestScore} ms
             </span>
           ) : (
@@ -144,27 +144,30 @@ export default function App() {
 
         {/* 1. IDLE: 시작 전 화면 */}
         {gameState === 'IDLE' && (
-          <div className="flex flex-col items-center gap-5 animate-fade-in">
-            <div className="w-24 h-24 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-2xl shadow-blue-950/60 mb-1">
-              <Zap size={48} className="fill-blue-400 text-blue-400 animate-pulse" />
+          <div className="flex flex-col items-center gap-4 animate-fade-in w-full">
+            <div className="w-16 h-16 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shadow-lg shadow-sky-950/40 mb-1">
+              <Zap size={32} className="fill-sky-400 text-sky-400 animate-pulse" />
             </div>
 
-            <div className="space-y-2">
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-semibold tracking-wider text-sky-400 uppercase">
+                REACTION SPEED TEST
+              </span>
+              <h1 className="text-[18px] sm:text-[20px] font-black tracking-tight text-white">
                 화면을 터치하여 시작하세요!
               </h1>
-              <p className="text-slate-400 text-[12px] max-w-md mx-auto leading-relaxed">
+              <p className="text-slate-300 text-[12px] max-w-sm mx-auto leading-relaxed mt-1">
                 시작하면 화면이 대기 상태로 바뀝니다.<br />
-                화면이 <strong className="text-emerald-400 font-semibold">초록색(GREEN)</strong>으로 바뀌는 순간, 최대한 빠르게 터치하세요!
+                화면이 <strong className="text-emerald-400 font-bold">초록색(GREEN)</strong>으로 바뀌는 순간, 최대한 빠르게 터치하세요!
               </p>
             </div>
 
             <button
               type="button"
               onClick={startGame}
-              className="mt-3 px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-700/30 active:scale-95 transition-all flex items-center gap-2"
+              className="mt-2 px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-[12px] shadow-md shadow-sky-600/25 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              <Zap size={16} />
+              <Zap size={14} />
               테스트 시작하기
             </button>
           </div>
@@ -172,17 +175,17 @@ export default function App() {
 
         {/* 2. WAITING: 준비 대기 상태 (빨강/주황) */}
         {gameState === 'WAITING' && (
-          <div className="flex flex-col items-center gap-4 animate-pulse">
-            <div className="w-20 h-20 rounded-full bg-red-500/30 border border-red-500/40 flex items-center justify-center text-red-200">
-              <span className="inline-block w-5 h-5 rounded-full bg-red-400 animate-ping" />
+          <div className="flex flex-col items-center gap-3 animate-pulse w-full">
+            <div className="w-14 h-14 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-200">
+              <span className="inline-block w-4 h-4 rounded-full bg-rose-400 animate-ping" />
             </div>
-            <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-red-100">
-              준비...
+            <h2 className="text-[20px] sm:text-[22px] font-black tracking-tight text-rose-100">
+              준비 중...
             </h2>
-            <p className="text-red-200/90 text-sm font-medium">
+            <p className="text-rose-200/90 text-[12px] font-medium">
               초록색으로 변할 때까지 잠시 기다려주세요!
             </p>
-            <span className="text-[11px] text-red-300/70 bg-black/25 px-3 py-1 rounded-full">
+            <span className="text-[11px] text-rose-300/80 bg-black/30 px-3 py-1 rounded-full border border-rose-500/20">
               (지금 터치하면 실패합니다)
             </span>
           </div>
@@ -190,11 +193,14 @@ export default function App() {
 
         {/* 3. READY: 초록색 화면 ("지금 터치!") */}
         {gameState === 'READY' && (
-          <div className="flex flex-col items-center gap-3">
-            <h2 className="text-5xl sm:text-7xl font-black tracking-tight text-slate-950 uppercase drop-shadow-sm scale-110 animate-bounce">
+          <div className="flex flex-col items-center gap-2 w-full animate-bounce">
+            <div className="w-14 h-14 rounded-2xl bg-slate-950/20 border border-slate-950/30 flex items-center justify-center text-slate-950 mb-1">
+              <Zap size={32} className="fill-slate-950" />
+            </div>
+            <h2 className="text-[26px] sm:text-[30px] font-black tracking-tight text-slate-950 uppercase drop-shadow-xs">
               지금 터치!
             </h2>
-            <p className="text-slate-900 font-bold text-lg sm:text-xl">
+            <p className="text-slate-950 font-bold text-[13px]">
               지금 즉시 화면을 탭하세요!
             </p>
           </div>
@@ -202,13 +208,13 @@ export default function App() {
 
         {/* 4. EARLY: 너무 일찍 터치 (실패) */}
         {gameState === 'EARLY' && (
-          <div className="flex flex-col items-center gap-4 animate-shake">
-            <div className="w-24 h-24 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 mb-1">
-              <AlertTriangle size={52} />
+          <div className="flex flex-col items-center gap-3 animate-shake w-full">
+            <div className="w-14 h-14 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 mb-1">
+              <AlertTriangle size={32} />
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-3xl sm:text-4xl font-black text-red-400">
+              <h2 className="text-[18px] sm:text-[20px] font-black text-rose-400">
                 너무 빨랐습니다! (실패)
               </h2>
               <p className="text-slate-300 text-[12px]">
@@ -216,13 +222,13 @@ export default function App() {
               </p>
             </div>
 
-            <div className="mt-4 flex flex-col items-center gap-2">
+            <div className="mt-3 flex flex-col items-center gap-2">
               <button
                 type="button"
                 onClick={startGame}
-                className="px-6 py-2.5 rounded-xl bg-rose-200 text-rose-900 hover:bg-rose-300 font-bold text-[12px] shadow-md transition-all flex items-center gap-2 active:scale-95"
+                className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-200 border border-rose-500/30 font-bold text-[12px] shadow-sm transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
               >
-                <RotateCcw size={14} />
+                <RotateCcw size={13} />
                 다시 시도하기
               </button>
               <p className="text-[11px] text-slate-400">
@@ -234,48 +240,48 @@ export default function App() {
 
         {/* 5. RESULT: 반응속도 측정 결과 및 최고기록 비교 */}
         {gameState === 'RESULT' && currentGrade && (
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-3 w-full">
             {/* 최고기록 갱신 여부 및 실시간 비교 알림 */}
             {isFirstRecord ? (
-              <div className="px-3.5 py-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 animate-bounce shadow-sm">
-                <Sparkles size={13} />
+              <div className="px-3 py-1 rounded-full bg-amber-400/20 border border-amber-400/30 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 animate-bounce shadow-xs">
+                <Sparkles size={12} />
                 첫 기록 등록! 역대 최고기록으로 저장되었습니다.
               </div>
             ) : isNewRecord ? (
-              <div className="px-3.5 py-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 animate-bounce shadow-sm">
-                <Sparkles size={13} />
+              <div className="px-3 py-1 rounded-full bg-amber-400/20 border border-amber-400/30 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 animate-bounce shadow-xs">
+                <Sparkles size={12} />
                 🎉 축하합니다! 역대 최고기록 갱신! ({scoreDiff} ms 단축)
               </div>
             ) : (
-              <div className="px-3.5 py-1.5 rounded-full bg-slate-800/90 border border-slate-700 text-slate-300 text-[11px] font-medium flex items-center gap-1.5 shadow-sm">
-                <TrendingDown size={13} className="text-rose-400" />
+              <div className="px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 text-slate-300 text-[11px] font-medium flex items-center gap-1.5 shadow-xs">
+                <TrendingDown size={12} className="text-rose-400" />
                 역대 최고기록({bestScore} ms)보다 <span className="font-bold text-rose-300">+{scoreDiff} ms</span> 늦었습니다.
               </div>
             )}
 
             {/* 측정 시간 */}
             <div className="flex flex-col items-center gap-1 my-1">
-              <span className="text-6xl sm:text-7xl">{currentGrade.emoji}</span>
-              <div className="mt-2 text-5xl sm:text-6xl font-black tracking-tight text-white font-mono flex items-baseline gap-2">
+              <span className="text-4xl">{currentGrade.emoji}</span>
+              <div className="mt-1 text-[34px] sm:text-[38px] font-black tracking-tight text-white font-mono flex items-baseline gap-1.5">
                 <span>{reactionTime}</span>
-                <span className="text-2xl text-slate-400 font-sans">ms</span>
+                <span className="text-[15px] text-slate-400 font-sans">ms</span>
               </div>
-              <div className={`mt-2 font-bold text-xl sm:text-2xl ${currentGrade.color}`}>
+              <div className={`mt-1 font-bold text-[15px] ${currentGrade.color}`}>
                 {currentGrade.title}
               </div>
-              <p className="text-slate-300 text-[12px] max-w-sm mt-1 leading-relaxed">
+              <p className="text-slate-300 text-[12px] max-w-xs mt-0.5 leading-relaxed">
                 {currentGrade.desc}
               </p>
             </div>
 
             {/* 재시작 버튼 */}
-            <div className="mt-3 flex flex-col items-center gap-2">
+            <div className="mt-2 flex flex-col items-center gap-1.5">
               <button
                 type="button"
                 onClick={startGame}
-                className="px-6 py-3 rounded-xl bg-blue-200 text-blue-900 hover:bg-blue-300 font-bold text-[12px] shadow-lg transition-all flex items-center gap-2 active:scale-95"
+                className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-[12px] shadow-md shadow-sky-600/20 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
               >
-                <RotateCcw size={14} />
+                <RotateCcw size={13} />
                 다시 측정하기
               </button>
               <p className="text-[11px] text-slate-400">
