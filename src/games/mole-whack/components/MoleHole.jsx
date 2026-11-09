@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function MoleHole({ isUp, isHit, onWhack }) {
+export default function MoleHole({ isUp, isHit, onWhack, onMiss }) {
   const [showHammer, setShowHammer] = useState(false);
 
   const handleClick = (e) => {
@@ -9,6 +9,8 @@ export default function MoleHole({ isUp, isHit, onWhack }) {
       setShowHammer(true);
       setTimeout(() => setShowHammer(false), 220);
       onWhack();
+    } else {
+      onMiss?.();
     }
   };
 

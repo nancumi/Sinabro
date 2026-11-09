@@ -13,6 +13,7 @@ import {
   getBestScore, 
   saveScore 
 } from './utils/gameUtils';
+import { reflexSound } from './utils/sound';
 
 // 게임 상태 타입: 'IDLE' | 'WAITING' | 'READY' | 'EARLY' | 'RESULT'
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
       timerRef.current = null;
     }
 
+    reflexSound.playWaiting();
     setGameState('WAITING');
     setReactionTime(null);
     setScoreDiff(null);
@@ -52,6 +54,7 @@ export default function App() {
     timerRef.current = setTimeout(() => {
       startTimeRef.current = performance.now();
       setGameState('READY');
+      reflexSound.playSignal();
     }, randomDelay);
   }, []);
 
@@ -70,6 +73,7 @@ export default function App() {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
+      reflexSound.playEarly();
       setGameState('EARLY');
     } else if (gameState === 'READY') {
       // 반응속도 측정
@@ -85,15 +89,18 @@ export default function App() {
         setIsNewRecord(true);
         setBestScore(saveResult.bestScore);
         setScoreDiff(0);
+        reflexSound.playNewRecord();
       } else if (saveResult.isNewBest) {
         // 신기록 갱신 (이전 최고기록 대비 단축 시간)
         setIsNewRecord(true);
         setScoreDiff(saveResult.prevBest - elapsed); // 양수: 단축된 ms
         setBestScore(saveResult.bestScore);
+        reflexSound.playNewRecord();
       } else {
         // 기존 최고기록보다 느림
         setIsNewRecord(false);
         setScoreDiff(elapsed - saveResult.prevBest); // 양수: 초과된 ms
+        reflexSound.playSuccess();
       }
 
       setGameState('RESULT');

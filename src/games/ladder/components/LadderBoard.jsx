@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { Check, RotateCcw, Skull } from 'lucide-react';
+import { ladderSound } from '../utils/sound';
 
 // 안전한 폭죽 호출 헬퍼 (모듈 호환성 방어)
 const fireConfetti = (options) => {
@@ -77,6 +78,7 @@ export default function LadderBoard({
 
     setActivePlayerIndex(playerIndex);
     setActiveTracePoints([]);
+    ladderSound.playSelect();
 
     let currentCol = playerIndex;
     const path = [];
@@ -113,6 +115,7 @@ export default function LadderBoard({
     const segmentDuration = 170;
     const totalDuration = totalSegments * segmentDuration;
     let startTime = null;
+    let lastStepIndex = -1;
 
     const tick = (now) => {
       if (!startTime) {
@@ -128,6 +131,11 @@ export default function LadderBoard({
         Math.min(Math.floor(currentProgressScaled), totalSegments - 1)
       );
       const segmentProgress = currentProgressScaled - segmentIndex;
+
+      if (segmentIndex !== lastStepIndex) {
+        lastStepIndex = segmentIndex;
+        ladderSound.playStep(segmentIndex);
+      }
 
       const p1 = path[segmentIndex];
       const p2 = path[segmentIndex + 1];
@@ -188,6 +196,7 @@ export default function LadderBoard({
     setActiveTracePoints([]);
 
     if (isBomb) {
+      ladderSound.playBomb();
       setIsGameOver(true);
       setBombVictim(player);
       setIsShaking(true);
@@ -218,6 +227,7 @@ export default function LadderBoard({
         }
       })();
     } else {
+      ladderSound.playSafe();
       fireConfetti({
         particleCount: 50,
         spread: 60,
@@ -464,7 +474,10 @@ export default function LadderBoard({
             {/* 다시 시작 버튼 */}
             <button
               type="button"
-              onClick={onRestart}
+              onClick={() => {
+                ladderSound.playClick();
+                onRestart();
+              }}
               className="py-3 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-purple-500 to-indigo-500 hover:from-rose-600 hover:to-indigo-600 text-white font-semibold text-[12px] flex items-center justify-center gap-2 shadow-2xl active:scale-95 transition-all cursor-pointer"
             >
               <RotateCcw size={15} />

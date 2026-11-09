@@ -150,7 +150,7 @@ export default function Step2RouletteItems({
           상단 입력창에서 항목을 추가하거나 프리셋을 선택해주세요.
         </div>
       ) : (
-        <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+        <div className="space-y-2">
           {items.map((item, index) => {
             const itemColor = item.color || COLOR_PALETTE[index % COLOR_PALETTE.length];
             return (

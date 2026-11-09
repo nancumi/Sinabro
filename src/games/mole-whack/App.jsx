@@ -209,6 +209,12 @@ export default function App() {
     }, 250);
   };
 
+  // 두더지 타격 실패 (헛스윙)
+  const handleMiss = () => {
+    if (gameState !== 'playing') return;
+    soundManager.playMiss();
+  };
+
   // 음소거 토글
   const toggleSound = (e) => {
     e.stopPropagation();
@@ -330,7 +336,10 @@ export default function App() {
           )}
 
           {/* 3x3 구멍판 메인 플레이 영역 */}
-          <div className="relative w-full aspect-square max-w-[360px] p-2.5 rounded-2xl bg-[#0d0f16] border border-gray-800/70 shadow-[inset_0_4px_16px_rgba(0,0,0,0.7)] flex items-center justify-center">
+          <div
+            onClick={handleMiss}
+            className="relative w-full aspect-square max-w-[360px] p-2.5 rounded-2xl bg-[#0d0f16] border border-gray-800/70 shadow-[inset_0_4px_16px_rgba(0,0,0,0.7)] flex items-center justify-center cursor-crosshair"
+          >
             <div className="w-full h-full grid grid-cols-3 grid-rows-3 gap-2 sm:gap-2.5">
               {holes.map((hole, idx) => (
                 <MoleHole
@@ -338,6 +347,7 @@ export default function App() {
                   isUp={hole.up}
                   isHit={hole.hit}
                   onWhack={() => handleWhack(idx)}
+                  onMiss={handleMiss}
                 />
               ))}
             </div>

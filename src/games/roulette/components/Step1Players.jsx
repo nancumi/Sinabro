@@ -85,7 +85,7 @@ export default function Step1Players({
       </div>
 
       {/* Dynamic Player Name Inputs */}
-      <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+      <div className="space-y-2">
         {players.map((player, index) => (
           <div
             key={index}

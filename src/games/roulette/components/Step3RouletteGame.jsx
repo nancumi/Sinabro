@@ -258,7 +258,7 @@ export default function Step3RouletteGame({
           </span>
         </div>
 
-        <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+        <div className="space-y-1.5">
           {players.map((pName, idx) => {
             const hasResult = playerResults[idx];
             const isCurrent = idx === currentPlayerIndex && !isAllCompleted;

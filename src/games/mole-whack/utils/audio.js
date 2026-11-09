@@ -49,6 +49,29 @@ class SoundManager {
     osc.stop(now + 0.15);
   }
 
+  // 두더지 헛스윙/잡기 실패 효과음 (바람 가르는 휘익/툭 사운드)
+  playMiss() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(420, now);
+    osc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.09);
+  }
+
   // 게임 시작 비프음
   playStart() {
     if (this.isMuted) return;

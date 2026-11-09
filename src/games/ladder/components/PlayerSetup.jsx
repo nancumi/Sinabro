@@ -1,18 +1,26 @@
 import React from 'react';
 import { Minus, Plus, Play } from 'lucide-react';
 import { CHARACTERS } from '../constants/characters';
+import { ladderSound } from '../utils/sound';
 
 export default function PlayerSetup({ playerCount, setPlayerCount, onStartGame }) {
   const handleDecrease = () => {
     if (playerCount > 2) {
+      ladderSound.playClick();
       setPlayerCount((prev) => prev - 1);
     }
   };
 
   const handleIncrease = () => {
     if (playerCount < 9) {
+      ladderSound.playClick();
       setPlayerCount((prev) => prev + 1);
     }
+  };
+
+  const handleStart = () => {
+    ladderSound.playClick();
+    onStartGame();
   };
 
   const activePlayers = CHARACTERS.slice(0, playerCount);
@@ -81,7 +89,7 @@ export default function PlayerSetup({ playerCount, setPlayerCount, onStartGame }
       {/* 사다리 생성 시작 버튼 */}
       <button
         type="button"
-        onClick={onStartGame}
+        onClick={handleStart}
         className="w-full py-3 px-5 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold text-[12px] flex items-center justify-center gap-2 shadow-lg hover:shadow-indigo-500/25 active:scale-[0.98] transition-all"
       >
         <Play size={14} className="fill-white" />
