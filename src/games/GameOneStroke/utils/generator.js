@@ -17,7 +17,7 @@ export function getShapeFingerprint(nodes, edges) {
 /**
  * 오일러 경로(Eulerian Trail) 엄격 검증 및 정답 시뮬레이터 (Hierholzer Algorithm)
  * 1. 모든 노드의 차수(연결 선 개수) 계산
- * 2. 홀수점 개수가 0개(어느 점에서나 출발 가능) 또는 2개(반드시 두 점 중 하나에서 출발)인지 검증 (오일러 정리)
+ * 2. 홀수점 개수가 0개(어느 점에서나 출발 가능) 또는 2개(반드시 두 점 중 하나에서 출발)인지 검증
  * 3. 실제 모든 선을 중복 없이 방문하는 완주 경로(solution)를 시뮬레이션하여 100% 클리어 보증
  */
 export function solveEulerian(nodes, edges) {
@@ -30,17 +30,16 @@ export function solveEulerian(nodes, edges) {
     adj[e.to].push({ to: e.from, edgeIndex: i });
   });
 
-  // 홀수점(연결 선 수가 홀수인 점) 판별
+  // 홀수점 판별
   const oddNodes = nodes
     .filter((n) => adj[n.id].length % 2 !== 0)
     .map((n) => n.id);
 
   // 오일러 경로 법칙: 홀수점은 반드시 0개 또는 2개여야만 함!
   if (oddNodes.length !== 0 && oddNodes.length !== 2) {
-    return null; // 수학적으로 절대 풀 수 없는 도형 -> 즉시 기각
+    return null;
   }
 
-  // 시작점 선정: 홀수점이 2개면 반드시 그 중 하나에서 시작해야 함
   const startNode = oddNodes.length === 2 ? oddNodes[0] : nodes[0].id;
   const trail = [];
   const stack = [startNode];
@@ -74,14 +73,14 @@ export function solveEulerian(nodes, edges) {
   return {
     solution: trail.reverse(),
     oddNodes,
-    // 홀수점이 2개인 경우 그 2개 점만 유효한 시작점, 0개인 경우 모든 점이 유효한 시작점
     validStartNodes: oddNodes.length === 2 ? oddNodes : nodes.map((n) => n.id),
   };
 }
 
-// 1. 엄선된 20개 정통 클래식 오일러 스테이지 (전부 홀수점 0개 또는 2개 검증 완료)
+// 1. 엄선된 20개 클래식 오일러 스테이지 (선 개수 및 난이도 순 완전 정렬)
+// 3선 ➡️ 5선 ➡️ 6선 ➡️ 7선 ➡️ 8선 ➡️ 9선 ➡️ 10선 ➡️ 11선 ➡️ 12선 ➡️ 16선 (점진적 우상향 난이도 곡선)
 export const CLASSIC_STAGES = [
-  // Stage 1: 삼각형 (3노드 3에지, 0홀수)
+  // Stage 1: 삼각형 (선 3개)
   {
     stage: 1,
     title: '입문: 트라이앵글',
@@ -96,7 +95,7 @@ export const CLASSIC_STAGES = [
       { from: 2, to: 0 },
     ],
   },
-  // Stage 2: 모래시계 (4노드 5에지, 2홀수: 0, 2)
+  // Stage 2: 모래시계 (선 5개)
   {
     stage: 2,
     title: '모래시계',
@@ -114,29 +113,27 @@ export const CLASSIC_STAGES = [
       { from: 0, to: 2 },
     ],
   },
-  // Stage 3: 클래식 지붕집 (5노드 8에지, 2홀수: 3, 4)
+  // Stage 3: 더블 윙 트라이앵글 (선 6개)
   {
     stage: 3,
-    title: '클래식 지붕집',
+    title: '더블 윙 트라이앵글',
     nodes: [
-      { id: 0, x: 200, y: 60 },
-      { id: 1, x: 90, y: 160 },
-      { id: 2, x: 310, y: 160 },
-      { id: 3, x: 90, y: 330 },
-      { id: 4, x: 310, y: 330 },
+      { id: 0, x: 200, y: 200 },
+      { id: 1, x: 80, y: 100 },
+      { id: 2, x: 80, y: 300 },
+      { id: 3, x: 320, y: 100 },
+      { id: 4, x: 320, y: 300 },
     ],
     edges: [
       { from: 0, to: 1 },
-      { from: 0, to: 2 },
       { from: 1, to: 2 },
-      { from: 1, to: 3 },
-      { from: 2, to: 4 },
+      { from: 2, to: 0 },
+      { from: 0, to: 3 },
       { from: 3, to: 4 },
-      { from: 1, to: 4 },
-      { from: 2, to: 3 },
+      { from: 4, to: 0 },
     ],
   },
-  // Stage 4: 다이아몬드 프리즘 (5노드 6에지, 2홀수: 0, 3 - 완벽하게 풀리는 정통 오일러 구조!)
+  // Stage 4: 다이아몬드 프리즘 (선 6개)
   {
     stage: 4,
     title: '다이아몬드 프리즘',
@@ -156,56 +153,10 @@ export const CLASSIC_STAGES = [
       { from: 4, to: 3 },
     ],
   },
-  // Stage 5: 열린 편지봉투 (5노드 8에지, 2홀수: 3, 4)
+  // Stage 5: 나비 브릿지 (선 7개)
   {
     stage: 5,
-    title: '열린 편지봉투',
-    nodes: [
-      { id: 0, x: 200, y: 80 },
-      { id: 1, x: 80, y: 170 },
-      { id: 2, x: 320, y: 170 },
-      { id: 3, x: 80, y: 330 },
-      { id: 4, x: 320, y: 330 },
-    ],
-    edges: [
-      { from: 0, to: 1 },
-      { from: 0, to: 2 },
-      { from: 1, to: 2 },
-      { from: 1, to: 3 },
-      { from: 2, to: 4 },
-      { from: 3, to: 4 },
-      { from: 1, to: 4 },
-      { from: 2, to: 3 },
-    ],
-  },
-  // Stage 6: 빛나는 오각별 (5노드 10에지, 0홀수 - 완벽한 오일러 서킷)
-  {
-    stage: 6,
-    title: '빛나는 오각별',
-    nodes: [
-      { id: 0, x: 200, y: 60 },
-      { id: 1, x: 333, y: 157 },
-      { id: 2, x: 282, y: 314 },
-      { id: 3, x: 118, y: 314 },
-      { id: 4, x: 67, y: 157 },
-    ],
-    edges: [
-      { from: 0, to: 1 },
-      { from: 1, to: 2 },
-      { from: 2, to: 3 },
-      { from: 3, to: 4 },
-      { from: 4, to: 0 },
-      { from: 0, to: 2 },
-      { from: 2, to: 4 },
-      { from: 4, to: 1 },
-      { from: 1, to: 3 },
-      { from: 3, to: 0 },
-    ],
-  },
-  // Stage 7: 더블 윙 트라이앵글 (5노드 6에지, 0홀수)
-  {
-    stage: 7,
-    title: '더블 윙 트라이앵글',
+    title: '나비 브릿지',
     nodes: [
       { id: 0, x: 200, y: 200 },
       { id: 1, x: 80, y: 100 },
@@ -220,11 +171,34 @@ export const CLASSIC_STAGES = [
       { from: 0, to: 3 },
       { from: 3, to: 4 },
       { from: 4, to: 0 },
+      { from: 1, to: 3 },
     ],
   },
-  // Stage 8: 기하학 물고기 (6노드 8에지, 2홀수: 1, 2)
+  // Stage 6: 육각 게이트 (선 7개)
   {
-    stage: 8,
+    stage: 6,
+    title: '육각 게이트',
+    nodes: [
+      { id: 0, x: 200, y: 60 },
+      { id: 1, x: 320, y: 130 },
+      { id: 2, x: 320, y: 270 },
+      { id: 3, x: 200, y: 340 },
+      { id: 4, x: 80, y: 270 },
+      { id: 5, x: 80, y: 130 },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+      { from: 3, to: 4 },
+      { from: 4, to: 5 },
+      { from: 5, to: 0 },
+      { from: 0, to: 3 },
+    ],
+  },
+  // Stage 7: 기하학 물고기 (선 8개)
+  {
+    stage: 7,
     title: '기하학 물고기',
     nodes: [
       { id: 0, x: 80, y: 200 },
@@ -245,29 +219,51 @@ export const CLASSIC_STAGES = [
       { from: 5, to: 3 },
     ],
   },
-  // Stage 9: 육각 게이트 (6노드 7에지, 2홀수: 0, 3)
+  // Stage 8: 열린 편지봉투 (선 8개)
   {
-    stage: 9,
-    title: '육각 게이트',
+    stage: 8,
+    title: '열린 편지봉투',
     nodes: [
-      { id: 0, x: 200, y: 60 },
-      { id: 1, x: 320, y: 130 },
-      { id: 2, x: 320, y: 270 },
-      { id: 3, x: 200, y: 340 },
-      { id: 4, x: 80, y: 270 },
-      { id: 5, x: 80, y: 130 },
+      { id: 0, x: 200, y: 80 },
+      { id: 1, x: 80, y: 170 },
+      { id: 2, x: 320, y: 170 },
+      { id: 3, x: 80, y: 330 },
+      { id: 4, x: 320, y: 330 },
     ],
     edges: [
       { from: 0, to: 1 },
+      { from: 0, to: 2 },
       { from: 1, to: 2 },
-      { from: 2, to: 3 },
+      { from: 1, to: 3 },
+      { from: 2, to: 4 },
       { from: 3, to: 4 },
-      { from: 4, to: 5 },
-      { from: 5, to: 0 },
-      { from: 0, to: 3 },
+      { from: 1, to: 4 },
+      { from: 2, to: 3 },
     ],
   },
-  // Stage 10: 트리플 피라미드 (6노드 9에지, 0홀수)
+  // Stage 9: 클래식 지붕집 (선 8개)
+  {
+    stage: 9,
+    title: '클래식 지붕집',
+    nodes: [
+      { id: 0, x: 200, y: 60 },
+      { id: 1, x: 90, y: 160 },
+      { id: 2, x: 310, y: 160 },
+      { id: 3, x: 90, y: 330 },
+      { id: 4, x: 310, y: 330 },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 0, to: 2 },
+      { from: 1, to: 2 },
+      { from: 1, to: 3 },
+      { from: 2, to: 4 },
+      { from: 3, to: 4 },
+      { from: 1, to: 4 },
+      { from: 2, to: 3 },
+    ],
+  },
+  // Stage 10: 트리플 피라미드 (선 9개)
   {
     stage: 10,
     title: '트리플 피라미드',
@@ -291,34 +287,32 @@ export const CLASSIC_STAGES = [
       { from: 4, to: 5 },
     ],
   },
-  // Stage 11: 신비의 육각별 (6노드 12에지, 0홀수)
+  // Stage 11: 크루세이더 실드 (선 10개)
   {
     stage: 11,
-    title: '신비의 육각별',
+    title: '크루세이더 실드',
     nodes: [
-      { id: 0, x: 200, y: 50 },
-      { id: 1, x: 330, y: 125 },
-      { id: 2, x: 330, y: 275 },
-      { id: 3, x: 200, y: 350 },
-      { id: 4, x: 70, y: 275 },
-      { id: 5, x: 70, y: 125 },
+      { id: 0, x: 200, y: 60 },
+      { id: 1, x: 80, y: 140 },
+      { id: 2, x: 320, y: 140 },
+      { id: 3, x: 80, y: 260 },
+      { id: 4, x: 320, y: 260 },
+      { id: 5, x: 200, y: 350 },
     ],
     edges: [
-      { from: 0, to: 2 },
-      { from: 2, to: 4 },
-      { from: 4, to: 0 },
-      { from: 3, to: 5 },
-      { from: 5, to: 1 },
-      { from: 1, to: 3 },
       { from: 0, to: 1 },
+      { from: 0, to: 2 },
       { from: 1, to: 2 },
+      { from: 1, to: 3 },
+      { from: 2, to: 4 },
+      { from: 3, to: 5 },
+      { from: 4, to: 5 },
+      { from: 1, to: 4 },
       { from: 2, to: 3 },
       { from: 3, to: 4 },
-      { from: 4, to: 5 },
-      { from: 5, to: 0 },
     ],
   },
-  // Stage 12: 바람개비 풍차 (7노드 10에지, 2홀수: 1, 6)
+  // Stage 12: 바람개비 풍차 (선 10개)
   {
     stage: 12,
     title: '바람개비 풍차',
@@ -344,55 +338,9 @@ export const CLASSIC_STAGES = [
       { from: 1, to: 6 },
     ],
   },
-  // Stage 13: 나비 브릿지 (5노드 7에지, 2홀수: 1, 3)
+  // Stage 13: 로열 크라운 (선 10개)
   {
     stage: 13,
-    title: '나비 브릿지',
-    nodes: [
-      { id: 0, x: 200, y: 200 },
-      { id: 1, x: 80, y: 100 },
-      { id: 2, x: 80, y: 300 },
-      { id: 3, x: 320, y: 100 },
-      { id: 4, x: 320, y: 300 },
-    ],
-    edges: [
-      { from: 0, to: 1 },
-      { from: 1, to: 2 },
-      { from: 2, to: 0 },
-      { from: 0, to: 3 },
-      { from: 3, to: 4 },
-      { from: 4, to: 0 },
-      { from: 1, to: 3 },
-    ],
-  },
-  // Stage 14: 크루세이더 실드 (6노드 10에지, 0홀수)
-  {
-    stage: 14,
-    title: '크루세이더 실드',
-    nodes: [
-      { id: 0, x: 200, y: 60 },
-      { id: 1, x: 80, y: 140 },
-      { id: 2, x: 320, y: 140 },
-      { id: 3, x: 80, y: 260 },
-      { id: 4, x: 320, y: 260 },
-      { id: 5, x: 200, y: 350 },
-    ],
-    edges: [
-      { from: 0, to: 1 },
-      { from: 0, to: 2 },
-      { from: 1, to: 2 },
-      { from: 1, to: 3 },
-      { from: 2, to: 4 },
-      { from: 3, to: 5 },
-      { from: 4, to: 5 },
-      { from: 1, to: 4 },
-      { from: 2, to: 3 },
-      { from: 3, to: 4 },
-    ],
-  },
-  // Stage 15: 로열 크라운 (7노드 10에지, 2홀수: 0, 3)
-  {
-    stage: 15,
     title: '로열 크라운',
     nodes: [
       { id: 0, x: 70, y: 280 },
@@ -416,9 +364,33 @@ export const CLASSIC_STAGES = [
       { from: 6, to: 3 },
     ],
   },
-  // Stage 16: 샤이닝 쥬얼 (6노드 11에지, 2홀수: 0, 1)
+  // Stage 14: 빛나는 오각별 (선 10개 - 촘촘한 4분기 교차성)
   {
-    stage: 16,
+    stage: 14,
+    title: '빛나는 오각별',
+    nodes: [
+      { id: 0, x: 200, y: 60 },
+      { id: 1, x: 333, y: 157 },
+      { id: 2, x: 282, y: 314 },
+      { id: 3, x: 118, y: 314 },
+      { id: 4, x: 67, y: 157 },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+      { from: 3, to: 4 },
+      { from: 4, to: 0 },
+      { from: 0, to: 2 },
+      { from: 2, to: 4 },
+      { from: 4, to: 1 },
+      { from: 1, to: 3 },
+      { from: 3, to: 0 },
+    ],
+  },
+  // Stage 15: 샤이닝 쥬얼 (선 11개)
+  {
+    stage: 15,
     title: '샤이닝 쥬얼',
     nodes: [
       { id: 0, x: 200, y: 60 },
@@ -442,9 +414,9 @@ export const CLASSIC_STAGES = [
       { from: 4, to: 5 },
     ],
   },
-  // Stage 17: 스페이스 로켓 (8노드 12에지, 2홀수: 3, 4)
+  // Stage 16: 스페이스 로켓 (선 12개)
   {
-    stage: 17,
+    stage: 16,
     title: '스페이스 로켓',
     nodes: [
       { id: 0, x: 200, y: 50 },
@@ -471,7 +443,34 @@ export const CLASSIC_STAGES = [
       { from: 4, to: 7 },
     ],
   },
-  // Stage 18: 육각 프리즘 스타 (6노드 12에지, 0홀수)
+  // Stage 17: 신비의 육각별 (선 12개)
+  {
+    stage: 17,
+    title: '신비의 육각별',
+    nodes: [
+      { id: 0, x: 200, y: 50 },
+      { id: 1, x: 330, y: 125 },
+      { id: 2, x: 330, y: 275 },
+      { id: 3, x: 200, y: 350 },
+      { id: 4, x: 70, y: 275 },
+      { id: 5, x: 70, y: 125 },
+    ],
+    edges: [
+      { from: 0, to: 2 },
+      { from: 2, to: 4 },
+      { from: 4, to: 0 },
+      { from: 3, to: 5 },
+      { from: 5, to: 1 },
+      { from: 1, to: 3 },
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+      { from: 2, to: 3 },
+      { from: 3, to: 4 },
+      { from: 4, to: 5 },
+      { from: 5, to: 0 },
+    ],
+  },
+  // Stage 18: 육각 프리즘 스타 (선 12개)
   {
     stage: 18,
     title: '육각 프리즘 스타',
@@ -498,7 +497,7 @@ export const CLASSIC_STAGES = [
       { from: 5, to: 1 },
     ],
   },
-  // Stage 19: 하이퍼 큐브 (8노드 16에지, 0홀수)
+  // Stage 19: 하이퍼 큐브 (선 16개)
   {
     stage: 19,
     title: '하이퍼 큐브',
@@ -531,7 +530,7 @@ export const CLASSIC_STAGES = [
       { from: 3, to: 6 },
     ],
   },
-  // Stage 20: 신화의 만다라 (8노드 16에지, 0홀수)
+  // Stage 20: 신화의 만다라 (선 16개)
   {
     stage: 20,
     title: '신화의 만다라',
@@ -564,7 +563,7 @@ export const CLASSIC_STAGES = [
   },
 ];
 
-// 2. 무한 프로시저 생성기 (Stage 21 이상) - solveEulerian 검증 통과 도형만 엄선
+// 2. 무한 프로시저 생성기 (Stage 21 이상) - 16선 이상 난이도 점진적 상승 & solveEulerian 검증
 export function generateProceduralStage(stageNumber, usedFingerprints = new Set()) {
   const layoutType = stageNumber % 3;
 
@@ -585,10 +584,10 @@ export function generateProceduralStage(stageNumber, usedFingerprints = new Set(
         }
       }
     } else if (layoutType === 1) {
-      // 원형 휠 (중심 1개 + 외곽 6개)
+      // 원형 휠 (중심 1개 + 외곽 7개)
       candidatePoints.push({ id: 0, x: 200, y: 200 });
-      for (let i = 0; i < 6; i++) {
-        const a = (Math.PI * 2 * i) / 6 - Math.PI / 2;
+      for (let i = 0; i < 7; i++) {
+        const a = (Math.PI * 2 * i) / 7 - Math.PI / 2;
         candidatePoints.push({
           id: i + 1,
           x: Math.round(200 + Math.cos(a) * 135),
@@ -613,7 +612,8 @@ export function generateProceduralStage(stageNumber, usedFingerprints = new Set(
       });
     }
 
-    const targetEdges = Math.min(7 + Math.floor((stageNumber - 20) * 0.4), 20);
+    // 21단계부터는 16개 선부터 시작하여 최대 24개 선까지 난이도 점진적 증가
+    const targetEdges = Math.min(16 + Math.floor((stageNumber - 20) * 0.45), 24);
     const usedEdges = new Set();
     const edges = [];
     const usedNodeIds = new Set();
@@ -623,7 +623,7 @@ export function generateProceduralStage(stageNumber, usedFingerprints = new Set(
 
     for (let s = 0; s < targetEdges; s++) {
       const p1 = candidatePoints[currentNode];
-      const maxDistSq = 145 * 145;
+      const maxDistSq = 175 * 175; // 대각선 연결 허용
       const neighbors = candidatePoints.filter((p2) => {
         if (p2.id === currentNode) return false;
         const dx = p2.x - p1.x;
@@ -643,7 +643,7 @@ export function generateProceduralStage(stageNumber, usedFingerprints = new Set(
       currentNode = nextNode;
     }
 
-    if (edges.length >= 6) {
+    if (edges.length >= Math.min(13, targetEdges - 2)) {
       const activeNodes = Array.from(usedNodeIds).map((id) => candidatePoints[id]);
       const idMap = new Map();
       const mappedNodes = activeNodes.map((n, idx) => {
@@ -676,13 +676,14 @@ export function generateProceduralStage(stageNumber, usedFingerprints = new Set(
     }
   }
 
-  // 폴백: 클래식 스테이지 중 하나를 검증하여 반환
-  const fb = CLASSIC_STAGES[(stageNumber - 1) % CLASSIC_STAGES.length];
+  // 폴백: 고난이도 마스터 스테이지(선 11~16개) 중 하나를 선별하여 난이도 유지
+  const masterCandidates = CLASSIC_STAGES.slice(14); // Stage 15 ~ 20 (선 11~16개)
+  const fb = masterCandidates[(stageNumber - 21) % masterCandidates.length];
   const verified = solveEulerian(fb.nodes, fb.edges);
   return {
     ...fb,
     stage: stageNumber,
-    title: `미러 챌린지 ${stageNumber}`,
+    title: `마스터 챌린지 ${stageNumber}`,
     ...verified,
   };
 }
