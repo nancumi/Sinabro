@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Maximize2, RotateCcw, Sparkles } from 'lucide-react';
-import { SPEEDS, FONT_SIZES } from '../utils/constants';
+import { SPEEDS, FONT_SIZES, BOARD_WIDTH, BOARD_HEIGHT } from '../utils/constants';
 
 export default function LedDisplay({
   text = '시나브로',
@@ -15,14 +15,51 @@ export default function LedDisplay({
   onToggleViewer,
 }) {
   const [showExitHint, setShowExitHint] = useState(true);
+  const [fullScale, setFullScale] = useState(1);
+  const [previewWidth, setPreviewWidth] = useState(854);
+  const previewRef = useRef(null);
+
+  // 전체화면 모드 스케일 계산 (854 x 480 규격을 기기 화면에 100% 최적 밀착 맞춤)
+  useEffect(() => {
+    if (!isViewerOpen) return;
+
+    const calculateScale = () => {
+      // 90도 회전 시 854px은 세로(innerHeight)에, 480px은 가로(innerWidth)에 매칭
+      const vh = window.innerHeight;
+      const vw = window.innerWidth;
+      const scale = Math.min(vh / BOARD_WIDTH, vw / BOARD_HEIGHT);
+      setFullScale(scale);
+    };
+
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, [isViewerOpen]);
+
+  // 미리보기 카드 너비 측정 (미리보기 내 폰트 비율 일치)
+  useEffect(() => {
+    if (isViewerOpen || !previewRef.current) return;
+
+    const updatePreviewWidth = () => {
+      if (previewRef.current) {
+        setPreviewWidth(previewRef.current.clientWidth);
+      }
+    };
+
+    updatePreviewWidth();
+    const observer = new ResizeObserver(updatePreviewWidth);
+    observer.observe(previewRef.current);
+    return () => observer.disconnect();
+  }, [isViewerOpen]);
 
   // 속도 초(seconds) 계산
   const currentSpeed = SPEEDS.find((s) => s.id === speed) || SPEEDS[1];
   const speedSec = currentSpeed.durationSec;
 
-  // 폰트 크기 계산 (전체 뷰 모드일 때는 화면에 맞춰 시원하게 확대)
+  // 폰트 크기 계산: 854x480 정규 규격 기준
   const currentFontSize = FONT_SIZES.find((f) => f.id === fontSize) || FONT_SIZES[2];
-  const basePx = isViewerOpen ? Math.round(currentFontSize.px * 1.5) : currentFontSize.px;
+  const previewScale = previewWidth > 0 ? previewWidth / BOARD_WIDTH : 0.5;
+  const basePx = isViewerOpen ? currentFontSize.px : Math.max(20, Math.round(currentFontSize.px * previewScale));
 
   // 전체 화면 모드 진입 시 3초 후 힌트 숨김
   useEffect(() => {
@@ -42,17 +79,17 @@ export default function LedDisplay({
       case 'none':
         return { textShadow: 'none' };
       case 'soft':
-        return { textShadow: `0 0 8px ${textColor}aa` };
+        return { textShadow: `0 0 10px ${textColor}aa` };
       case 'neon':
         return {
-          textShadow: `0 0 6px ${textColor}, 0 0 16px ${textColor}, 0 0 35px ${textColor}99`,
+          textShadow: `0 0 8px ${textColor}, 0 0 20px ${textColor}, 0 0 45px ${textColor}99`,
         };
       case 'intense':
         return {
-          textShadow: `0 0 6px #ffffff, 0 0 18px ${textColor}, 0 0 38px ${textColor}, 0 0 70px ${textColor}, 0 0 110px ${textColor}`,
+          textShadow: `0 0 8px #ffffff, 0 0 24px ${textColor}, 0 0 48px ${textColor}, 0 0 85px ${textColor}, 0 0 130px ${textColor}`,
         };
       default:
-        return { textShadow: `0 0 8px ${textColor}` };
+        return { textShadow: `0 0 10px ${textColor}` };
     }
   };
 
@@ -112,7 +149,7 @@ export default function LedDisplay({
   const displayText = text.trim() === '' ? '시나브로' : text;
   const isMarquee = textEffect === 'marquee-left' || textEffect === 'marquee-right';
 
-  // 텍스트 송출 렌더러 (마키는 빈틈없는 무한 루프, 그 외는 중앙 배치)
+  // 텍스트 송출 렌더러 (한쪽에서 사라짐과 동시에 다른 쪽에서 나타나는 끊김 없는 무한 롤링)
   const renderContent = () => {
     if (isMarquee) {
       const isLeft = textEffect === 'marquee-left';
@@ -132,7 +169,7 @@ export default function LedDisplay({
                   fontSize: `${basePx}px`,
                   ...getTextGlowStyle(),
                 }}
-                className="px-8 sm:px-14 inline-block font-black tracking-widest whitespace-nowrap"
+                className="px-10 sm:px-16 inline-block font-black tracking-widest whitespace-nowrap"
               >
                 {displayText}
               </span>
@@ -143,14 +180,14 @@ export default function LedDisplay({
                     fontSize: `${basePx}px`,
                     ...getTextGlowStyle(),
                   }}
-                  className="px-8 sm:px-14 inline-block font-black tracking-widest whitespace-nowrap"
+                  className="px-10 sm:px-16 inline-block font-black tracking-widest whitespace-nowrap"
                 >
                   {displayText}
                 </span>
               )}
             </div>
 
-            {/* 후반부 쌍둥이 트랙 (Half 2 - 한쪽에서 사라짐과 동시에 다른 쪽에서 나타남) */}
+            {/* 후반부 쌍둥이 트랙 (Half 2 - 한쪽에서 사라짐과 동시에 다른 쪽에서 완벽 밀착 등장) */}
             <div className="flex items-center shrink-0">
               <span
                 style={{
@@ -158,7 +195,7 @@ export default function LedDisplay({
                   fontSize: `${basePx}px`,
                   ...getTextGlowStyle(),
                 }}
-                className="px-8 sm:px-14 inline-block font-black tracking-widest whitespace-nowrap"
+                className="px-10 sm:px-16 inline-block font-black tracking-widest whitespace-nowrap"
               >
                 {displayText}
               </span>
@@ -169,7 +206,7 @@ export default function LedDisplay({
                     fontSize: `${basePx}px`,
                     ...getTextGlowStyle(),
                   }}
-                  className="px-8 sm:px-14 inline-block font-black tracking-widest whitespace-nowrap"
+                  className="px-10 sm:px-16 inline-block font-black tracking-widest whitespace-nowrap"
                 >
                   {displayText}
                 </span>
@@ -198,7 +235,7 @@ export default function LedDisplay({
     );
   };
 
-  // 1. 모바일 전용 9:16(16:9 회전) 100% 비율 최우선 전체 뷰 모드
+  // 1. 모바일 전용 854 x 480 px 규격 고정 + 90도 회전 전체 화면 모드
   if (isViewerOpen) {
     return (
       <div className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden select-none">
@@ -214,36 +251,36 @@ export default function LedDisplay({
           </button>
         </div>
 
-        {/* 16:9 비율 최우선 유지 + 화면 최대 100% 채움 + 90도 회전된 가로 전광판 */}
+        {/* 854 x 480 px 고정 캔버스 + 화면 크기에 맞춰 scale + 90도 회전 */}
         <div
           style={{
-            width: 'min(100vh, calc(100vw * 16 / 9))',
-            height: 'min(100vw, calc(100vh * 9 / 16))',
-            aspectRatio: '16 / 9',
-            transform: 'rotate(90deg)',
+            width: `${BOARD_WIDTH}px`,
+            height: `${BOARD_HEIGHT}px`,
+            transform: `rotate(90deg) scale(${fullScale})`,
             transformOrigin: 'center center',
             ...getBackgroundStyle(),
           }}
-          className="relative flex items-center justify-center overflow-hidden transition-colors shadow-2xl"
+          className="relative flex items-center justify-center overflow-hidden shrink-0 shadow-2xl transition-colors"
         >
           {renderContent()}
         </div>
 
-        {/* 회전 모드 진입 시 가로 방향 안내 힌트 */}
+        {/* 회전 모드 진입 안내 힌트 */}
         {showExitHint && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-black/85 border border-white/20 text-xs text-slate-300 backdrop-blur-md pointer-events-none animate-pulse flex items-center gap-2 shadow-2xl">
             <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
-            <span>16:9 가로 비율 최우선 모드입니다. 스마트폰을 가로로 돌려 응원하세요!</span>
+            <span>854 × 480 규격 모드입니다. 스마트폰을 가로로 돌려 응원하세요!</span>
           </div>
         )}
       </div>
     );
   }
 
-  // 2. 메인 페이지 내 16:9 가로형 실시간 미리보기 카드
+  // 2. 메인 페이지 내 854 x 480 비율 실시간 미리보기 카드
   return (
     <div
-      className="relative select-none overflow-hidden transition-all duration-300 w-full aspect-[16/9] max-h-[360px] rounded-2xl border border-slate-800 shadow-2xl shadow-cyan-950/20"
+      ref={previewRef}
+      className="relative select-none overflow-hidden transition-all duration-300 w-full aspect-[854/480] max-h-[380px] rounded-2xl border border-slate-800 shadow-2xl shadow-cyan-950/20"
       style={getBackgroundStyle()}
     >
       {/* 베젤/프레임 내부 섀도우 */}

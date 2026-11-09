@@ -14,8 +14,8 @@ export const PALETTE_COLORS = [
 
 // 글자 모션 효과 리스트 (2단계)
 export const TEXT_EFFECTS = [
-  { id: 'marquee-right', label: '좌→우 흐르기', desc: '왼쪽에서 오른쪽으로 흐름' },
   { id: 'marquee-left', label: '우→좌 흐르기', desc: '오른쪽에서 왼쪽으로 흐름' },
+  { id: 'marquee-right', label: '좌→우 흐르기', desc: '왼쪽에서 오른쪽으로 흐름' },
   { id: 'blink', label: '깜빡이기', desc: '글자가 화려하게 점멸' },
   { id: 'bounce', label: '통통 튀기', desc: '위아래로 통통 바운스' },
   { id: 'glow', label: '네온 펄스', desc: '숨쉬듯 빛나는 후광' },
@@ -38,12 +38,16 @@ export const BG_EFFECTS = [
   { id: 'aurora', label: '오로라 무대조명', desc: '신비롭고 몽환적인 그라데이션 빛' },
 ];
 
-// 폰트 크기 옵션
+// 전광판 표준 규격 크기 (854 x 480 px, 16:9 와이드)
+export const BOARD_WIDTH = 854;
+export const BOARD_HEIGHT = 480;
+
+// 폰트 크기 옵션 (854 x 480 캔버스 기준)
 export const FONT_SIZES = [
-  { id: 'sm', label: '작게', px: 32 },
-  { id: 'md', label: '보통', px: 48 },
-  { id: 'lg', label: '크게', px: 64 },
-  { id: 'xl', label: '아주 크게', px: 84 },
+  { id: 'sm', label: '작게', px: 68 },
+  { id: 'md', label: '보통', px: 96 },
+  { id: 'lg', label: '크게', px: 128 },
+  { id: 'xl', label: '아주 크게', px: 172 },
 ];
 
 // 속도 옵션
