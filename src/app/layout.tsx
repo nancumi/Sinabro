@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Script from 'next/script';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { ModalProvider } from '@/context/ModalContext';
@@ -10,6 +9,9 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://ws.ai.kr'),
   alternates: {
     canonical: 'https://ws.ai.kr',
+  },
+  other: {
+    'google-adsense-account': 'ca-pub-4819204726523615',
   },
   openGraph: {
     title: 'WS With Sinabro - 스마트하게 즐기는 시간 때우기',
@@ -29,11 +31,10 @@ export default function RootLayout({
   return (
     <html lang="ko" className="dark">
       <head>
-        <Script
+        <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4819204726523615"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
         />
       </head>
       <body className="bg-slate-950 text-slate-100 text-[12px] antialiased min-h-screen">
