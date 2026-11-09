@@ -47,7 +47,7 @@ export default function App() {
           list.forEach((fp) => seenFingerprints.current.add(fp));
         }
       }
-    } catch {}
+    } catch { }
   }, []);
 
   // 2. 스테이지 변경 시 데이터 갱신 (중복 방지 세트 전달)
@@ -71,7 +71,7 @@ export default function App() {
   const handleRestart = useCallback(() => {
     try {
       oneStrokeSound.playReset();
-    } catch {}
+    } catch { }
     setIsCleared(false);
     setBoardKey((k) => k + 1);
   }, []);
@@ -80,7 +80,7 @@ export default function App() {
   const handleNextStage = useCallback(() => {
     try {
       oneStrokeSound.playClick();
-    } catch {}
+    } catch { }
     setIsCleared(false);
     setCurrentStage((s) => s + 1);
   }, []);
@@ -90,7 +90,7 @@ export default function App() {
     if (currentStage <= 1) return;
     try {
       oneStrokeSound.playClick();
-    } catch {}
+    } catch { }
     setIsCleared(false);
     setCurrentStage((s) => s - 1);
   }, [currentStage]);
@@ -105,13 +105,13 @@ export default function App() {
       setMaxStageReached(nextMax);
       try {
         localStorage.setItem('sinabro_one_stroke_stage', String(nextMax));
-      } catch {}
+      } catch { }
     }
 
     try {
       const historyList = Array.from(seenFingerprints.current).slice(-50);
       localStorage.setItem('sinabro_one_stroke_history', JSON.stringify(historyList));
-    } catch {}
+    } catch { }
 
     // 축하 컨페티 효과
     try {
@@ -120,7 +120,7 @@ export default function App() {
         spread: 60,
         origin: { y: 0.65 },
       });
-    } catch {}
+    } catch { }
   }, [currentStage, maxStageReached]);
 
   return (

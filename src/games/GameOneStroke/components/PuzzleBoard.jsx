@@ -219,20 +219,24 @@ export default function PuzzleBoard({
             </feMerge>
           </filter>
 
-          {/* 선 그라디언트 */}
-          <linearGradient id="active-line-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          {/* 선 그라디언트 (보드 400x400 절대 좌표계 적용으로 수직선/수평선 사라짐 방지) */}
+          <linearGradient id="active-line-gradient" x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stopColor="#38bdf8" />
+            <stop offset="50%" stopColor="#60a5fa" />
             <stop offset="100%" stopColor="#818cf8" />
           </linearGradient>
         </defs>
 
-        {/* 1. 배경: 미완료 간선 (어두운 슬레이트 점선/실선) */}
+        {/* 1. 배경: 미완료 간선 (어두운 슬레이트 점선) */}
         {edges.map(({ from, to }) => {
           const n1 = nodes.find((n) => n.id === from);
           const n2 = nodes.find((n) => n.id === to);
           if (!n1 || !n2) return null;
           const key = getEdgeKey(from, to);
           const isDone = traversedEdges.has(key);
+
+          // 이미 지나간 선은 아래의 완성 네온 광선이 표시하므로 숨김
+          if (isDone) return null;
 
           return (
             <line
@@ -241,10 +245,10 @@ export default function PuzzleBoard({
               y1={n1.y}
               x2={n2.x}
               y2={n2.y}
-              stroke={isDone ? 'transparent' : '#334155'}
+              stroke="#334155"
               strokeWidth="5"
               strokeLinecap="round"
-              strokeDasharray={isDone ? undefined : '1 7'}
+              strokeDasharray="1 7"
               className="transition-all duration-200"
             />
           );
@@ -266,9 +270,9 @@ export default function PuzzleBoard({
                 y1={n1.y}
                 x2={n2.x}
                 y2={n2.y}
-                stroke="#0284c7"
+                stroke="#0ea5e9"
                 strokeWidth="10"
-                strokeOpacity="0.4"
+                strokeOpacity="0.45"
                 strokeLinecap="round"
                 filter="url(#neon-glow)"
               />
