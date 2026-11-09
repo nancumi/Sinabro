@@ -1,15 +1,16 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, Settings, ShieldCheck, Megaphone, LogIn, LogOut } from 'lucide-react';
+import { Sparkles, Settings, ShieldCheck, Megaphone, LogIn, LogOut, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 interface HeaderProps {
   onOpenAdmin: () => void;
   onOpenAdConfig: () => void;
+  onOpenAnalytics: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenAdmin, onOpenAdConfig }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenAdmin, onOpenAdConfig, onOpenAnalytics }) => {
   const { isAdmin, adminEmail, loginWithGoogle, logout } = useAuth();
 
   return (
@@ -41,11 +42,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin, onOpenAdConfig }) =
         {/* 우측 관리자 상태 및 편집 메뉴 */}
         <div className="flex items-center gap-2">
           {isAdmin ? (
-            <div className="flex items-center gap-1.5">
-              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800 text-[11px]">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800 text-[11px]">
                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
                 관리자 ({adminEmail})
               </span>
+              <button
+                type="button"
+                onClick={onOpenAnalytics}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-medium bg-purple-950/80 hover:bg-purple-900 text-purple-200 border border-purple-700/60 transition-colors"
+                title="실시간 방문자 접속 통계 및 분석"
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-purple-300" />
+                <span>접속 통계</span>
+              </button>
               <button
                 type="button"
                 onClick={onOpenAdmin}

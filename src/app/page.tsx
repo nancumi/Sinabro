@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from '@/components/layout/Header';
 import { CategoryNav } from '@/components/layout/CategoryNav';
 import { ContentViewer } from '@/components/content/ContentViewer';
@@ -8,6 +8,7 @@ import { ContentMenuList } from '@/components/content/ContentMenuList';
 import { AdSlot } from '@/components/ads/AdSlot';
 import { AdminManageModal } from '@/components/admin/AdminManageModal';
 import { AdConfigModal } from '@/components/admin/AdConfigModal';
+import { AnalyticsModal } from '@/components/admin/AnalyticsModal';
 import { Category, ContentItem, AdConfig } from '@/types';
 import {
   loadLocalCategories,
@@ -18,6 +19,11 @@ import {
   saveContents,
   saveAdConfig,
 } from '@/utils/storage';
+import {
+  trackSiteVisit,
+  trackContentView,
+  trackContentDwellTime,
+} from '@/utils/analytics';
 import { useAuth } from '@/context/AuthContext';
 
 export default function HomePage() {
@@ -42,9 +48,16 @@ export default function HomePage() {
   // 모달 제어 상태
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isAdConfigModalOpen, setIsAdConfigModalOpen] = useState(false);
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
 
-  // 1. 초기 로컬 캐시 로드
+  // 현재 재생 중인 콘텐츠 체류 시간 측정을 위한 Ref
+  const activeContentRef = useRef<{ id: string; startTime: number } | null>(null);
+
+  // 1. 초기 로컬 캐시 로드 및 사이트 전체 방문(PV/UV) 추적
   useEffect(() => {
+    // 사이트 전체 접속 추적
+    trackSiteVisit();
+
     const localCats = loadLocalCategories();
     const localContents = loadLocalContents();
     const localAds = loadLocalAdConfig();
@@ -69,7 +82,7 @@ export default function HomePage() {
       setSelectedContent(findMatched(localContents));
     }
 
-    // 2. Firestore 실시간 동기화 구독 (클라우드 DB에 데이터 있을 시 자동 갱신)
+    // 2. Firestore 실시간 동기화 구독
     const unsubscribe = subscribeToSiteData((data) => {
       if (data.categories && data.categories.length > 0) {
         setCategories(data.categories);
@@ -90,6 +103,51 @@ export default function HomePage() {
     return () => unsubscribe();
   }, []);
 
+  // 3. 개별 콘텐츠 방문 및 체류 시간(머문 시간) 추적
+  useEffect(() => {
+    if (!selectedContent) return;
+
+    // A. 이전 콘텐츠 체류 시간 정산
+    if (activeContentRef.current) {
+      const prevId = activeContentRef.current.id;
+      const elapsed = Math.round((Date.now() - activeContentRef.current.startTime) / 1000);
+      if (elapsed > 0) {
+        trackContentDwellTime(prevId, elapsed);
+      }
+    }
+
+    // B. 새 콘텐츠 접속 기록 (PV / UV)
+    trackContentView(selectedContent);
+
+    // C. 새 타이머 시작
+    activeContentRef.current = {
+      id: selectedContent.id,
+      startTime: Date.now(),
+    };
+
+    // D. 창 닫기 / 새로고침 시 최종 체류 시간 전송
+    const handleBeforeUnload = () => {
+      if (activeContentRef.current) {
+        const elapsed = Math.round((Date.now() - activeContentRef.current.startTime) / 1000);
+        if (elapsed > 0) {
+          trackContentDwellTime(activeContentRef.current.id, elapsed);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (activeContentRef.current && activeContentRef.current.id === selectedContent.id) {
+        const elapsed = Math.round((Date.now() - activeContentRef.current.startTime) / 1000);
+        if (elapsed > 0) {
+          trackContentDwellTime(activeContentRef.current.id, elapsed);
+        }
+      }
+    };
+  }, [selectedContent?.id]);
+
   // 카테고리 변경 처리 (Firestore + LocalStorage)
   const handleSaveCategories = async (newCats: Category[]) => {
     setCategories(newCats);
@@ -109,45 +167,41 @@ export default function HomePage() {
       } else {
         setSelectedContent(null);
       }
-    } else if (newContents.length > 0) {
-      setSelectedContent(newContents[0]);
     }
   };
 
   // 광고 설정 변경 처리 (Firestore + LocalStorage)
-  const handleSaveAdConfig = async (newAdConfig: AdConfig) => {
-    setAdConfig(newAdConfig);
-    await saveAdConfig(newAdConfig);
+  const handleSaveAdConfig = async (newConfig: AdConfig) => {
+    setAdConfig(newConfig);
+    await saveAdConfig(newConfig);
   };
 
-  // 콘텐츠 선택 시 URL 파라미터 자동 갱신 (?title=...) 및 화면 최상단으로 스크롤 이동
+  // 콘텐츠 선택 시 뷰어 영역 최상단으로 부드럽게 스크롤
   const handleSelectContent = (item: ContentItem) => {
     setSelectedContent(item);
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.set('title', item.title);
-      window.history.replaceState(null, '', url.toString());
 
-      // 모바일, PC 구분 없이 모두 화면 제일 상단(top: 0)으로 부드럽게 스크롤
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 50);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 text-[12px]">
-      {/* 헤더 */}
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans selection:bg-sky-500/30 selection:text-sky-200">
+      {/* 글로벌 상단 헤더 */}
       <Header
         onOpenAdmin={() => setIsAdminModalOpen(true)}
         onOpenAdConfig={() => setIsAdConfigModalOpen(true)}
+        onOpenAnalytics={() => setIsAnalyticsModalOpen(true)}
       />
 
-      {/* 카테고리 네비게이션 탭 (서브메뉴 드롭다운 포함) */}
+      {/* 카테고리 탭 네비게이션 */}
       <CategoryNav
         categories={categories}
         selectedCategoryId={selectedCategoryId}
-        onSelectCategory={setSelectedCategoryId}
+        onSelectCategory={(id) => setSelectedCategoryId(id)}
         contents={contents}
         selectedContentId={selectedContent?.id || null}
         onSelectContent={handleSelectContent}
@@ -155,7 +209,7 @@ export default function HomePage() {
         onOpenAdmin={() => setIsAdminModalOpen(true)}
       />
 
-      {/* 상단 광고 슬롯 */}
+      {/* 상단 배너 광고 슬롯 */}
       {(adConfig.topBannerEnabled && ((adConfig.adsenseClientId && adConfig.topSlotId) || isAdmin)) && (
         <div className="max-w-7xl mx-auto w-full px-4 pt-3">
           <AdSlot type="top" adConfig={adConfig} />
@@ -234,6 +288,12 @@ export default function HomePage() {
         onClose={() => setIsAdConfigModalOpen(false)}
         adConfig={adConfig}
         onSave={handleSaveAdConfig}
+      />
+
+      {/* 관리자 실시간 방문자 접속 통계 및 분석 모달창 */}
+      <AnalyticsModal
+        isOpen={isAnalyticsModalOpen}
+        onClose={() => setIsAnalyticsModalOpen(false)}
       />
     </div>
   );
