@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Sparkles, Tv } from 'lucide-react';
 import LedDisplay from './components/LedDisplay';
 import ControlPanel from './components/ControlPanel';
@@ -11,58 +11,14 @@ export default function App() {
   const [textColor, setTextColor] = useState('#ffe600');
   const [bgColor, setBgColor] = useState('#000000');
   const [textEffect, setTextEffect] = useState('marquee-left');
-  const [bgEffect, setBgEffect] = useState('dots');
+  const [bgEffect, setBgEffect] = useState('solid'); // 기본값: 깔끔한 단색
+  const [glowLevel, setGlowLevel] = useState('neon'); // 기본값: 네온 광선
   const [fontSize, setFontSize] = useState('lg');
   const [speed, setSpeed] = useState('normal');
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
-  // Fullscreen API 이벤트 동기화
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isCurrentlyFullscreen = Boolean(
-        document.fullscreenElement ||
-          document.webkitFullscreenElement ||
-          document.mozFullScreenElement ||
-          document.msFullscreenElement
-      );
-      setIsFullscreen(isCurrentlyFullscreen);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
-    };
-  }, []);
-
-  const toggleFullscreen = async () => {
-    try {
-      if (!isFullscreen) {
-        if (document.documentElement.requestFullscreen) {
-          await document.documentElement.requestFullscreen();
-        } else if (document.documentElement.webkitRequestFullscreen) {
-          await document.documentElement.webkitRequestFullscreen();
-        } else {
-          setIsFullscreen(true);
-        }
-      } else {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          await document.webkitExitFullscreen();
-        } else {
-          setIsFullscreen(false);
-        }
-      }
-    } catch {
-      setIsFullscreen((prev) => !prev);
-    }
+  const toggleViewer = () => {
+    setIsViewerOpen((prev) => !prev);
   };
 
   return (
@@ -99,15 +55,16 @@ export default function App() {
             bgColor={bgColor}
             textEffect={textEffect}
             bgEffect={bgEffect}
+            glowLevel={glowLevel}
             fontSize={fontSize}
             speed={speed}
-            isFullscreen={isFullscreen}
-            onToggleFullscreen={toggleFullscreen}
+            isViewerOpen={isViewerOpen}
+            onToggleViewer={toggleViewer}
           />
         </div>
 
-        {/* 설정 컨트롤 패널 (2단계 탭) */}
-        {!isFullscreen && (
+        {/* 설정 컨트롤 패널 (3단계 탭) */}
+        {!isViewerOpen && (
           <ControlPanel
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -119,13 +76,15 @@ export default function App() {
             setBgColor={setBgColor}
             textEffect={textEffect}
             setTextEffect={setTextEffect}
+            glowLevel={glowLevel}
+            setGlowLevel={setGlowLevel}
             bgEffect={bgEffect}
             setBgEffect={setBgEffect}
             fontSize={fontSize}
             setFontSize={setFontSize}
             speed={speed}
             setSpeed={setSpeed}
-            onStartCheer={toggleFullscreen}
+            onStartCheer={toggleViewer}
           />
         )}
       </main>

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Maximize2, Minimize2, Play, Sparkles } from 'lucide-react';
+import { Maximize2, RotateCcw, X, Sparkles } from 'lucide-react';
 import { SPEEDS, FONT_SIZES } from '../utils/constants';
 
 export default function LedDisplay({
@@ -7,34 +7,34 @@ export default function LedDisplay({
   textColor = '#ffe600',
   bgColor = '#000000',
   textEffect = 'marquee-left',
-  bgEffect = 'dots',
+  bgEffect = 'solid',
+  glowLevel = 'neon',
   fontSize = 'lg',
   speed = 'normal',
-  isFullscreen = false,
-  onToggleFullscreen,
+  isViewerOpen = false,
+  onToggleViewer,
 }) {
-  const containerRef = useRef(null);
-  const [showControlsInFullscreen, setShowControlsInFullscreen] = useState(true);
+  const [showExitHint, setShowExitHint] = useState(true);
 
   // 속도 초(seconds) 계산
   const currentSpeed = SPEEDS.find((s) => s.id === speed) || SPEEDS[1];
   const speedSec = currentSpeed.durationSec;
 
-  // 폰트 크기 계산 (전체화면일 때는 화면 비율에 맞춰 더 크게)
+  // 폰트 크기 계산 (전체 뷰 모드일 때는 화면에 맞춰 시원하게 확대)
   const currentFontSize = FONT_SIZES.find((f) => f.id === fontSize) || FONT_SIZES[2];
-  const basePx = isFullscreen ? Math.round(currentFontSize.px * 1.6) : currentFontSize.px;
+  const basePx = isViewerOpen ? Math.round(currentFontSize.px * 1.5) : currentFontSize.px;
 
-  // 전체화면 시 3초 후 컨트롤 자동 숨김
+  // 전체 화면 모드 진입 시 3초 후 힌트 숨김
   useEffect(() => {
-    if (!isFullscreen) {
-      setShowControlsInFullscreen(true);
+    if (!isViewerOpen) {
+      setShowExitHint(true);
       return;
     }
     const timer = setTimeout(() => {
-      setShowControlsInFullscreen(false);
-    }, 3000);
+      setShowExitHint(false);
+    }, 3500);
     return () => clearTimeout(timer);
-  }, [isFullscreen, showControlsInFullscreen]);
+  }, [isViewerOpen]);
 
   // 글자 애니메이션 스타일 생성
   const getTextAnimationStyle = () => {
@@ -74,69 +74,125 @@ export default function LedDisplay({
     }
   };
 
-  // 배경 스타일 생성
-  const getBackgroundStyle = () => {
-    if (bgEffect === 'gradient') {
-      return {
-        background: `linear-gradient(135deg, ${bgColor}, #1e1b4b, ${bgColor}, #0f172a)`,
-        backgroundSize: '300% 300%',
-        animation: `ledGradientShift ${speedSec * 1.5}s ease infinite`,
-      };
+  // 외부 광선(Glow) 효과 계산
+  const getTextGlowStyle = () => {
+    switch (glowLevel) {
+      case 'none':
+        return { textShadow: 'none' };
+      case 'soft':
+        return { textShadow: `0 0 8px ${textColor}aa` };
+      case 'neon':
+        return {
+          textShadow: `0 0 6px ${textColor}, 0 0 16px ${textColor}, 0 0 35px ${textColor}99`,
+        };
+      case 'intense':
+        return {
+          textShadow: `0 0 6px #ffffff, 0 0 18px ${textColor}, 0 0 38px ${textColor}, 0 0 70px ${textColor}, 0 0 110px ${textColor}`,
+        };
+      default:
+        return { textShadow: `0 0 8px ${textColor}` };
     }
-    return {
-      backgroundColor: bgColor,
-    };
   };
 
-  // 네온 텍스트 그림자
-  const textShadowStyle = {
-    color: textColor,
-    fontSize: `${basePx}px`,
-    textShadow: `
-      0 0 6px ${textColor},
-      0 0 15px ${textColor},
-      0 0 35px ${textColor}aa,
-      0 0 60px ${textColor}66
-    `,
+  // 배경 연출 효과 스타일
+  const getBackgroundStyle = () => {
+    switch (bgEffect) {
+      case 'strobe':
+        return {
+          backgroundColor: bgColor,
+          animation: `ledBgStrobe ${Math.max(0.2, speedSec * 0.08)}s steps(2, start) infinite`,
+        };
+      case 'neon-cycle':
+        return {
+          backgroundColor: bgColor,
+          animation: `ledNeonCycle ${speedSec * 0.8}s linear infinite`,
+        };
+      case 'aurora':
+        return {
+          background: `linear-gradient(135deg, ${bgColor}, #3b82f6, #ec4899, #8b5cf6, ${bgColor})`,
+          backgroundSize: '300% 300%',
+          animation: `ledAurora ${speedSec * 1.2}s ease infinite`,
+        };
+      case 'solid':
+      default:
+        return {
+          backgroundColor: bgColor,
+        };
+    }
   };
 
   const displayText = text.trim() === '' ? '시나브로' : text;
 
+  // 1. 모바일 전용 9:16 회전 100% 전체화면 뷰 (웹 내부 판)
+  if (isViewerOpen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden select-none">
+        {/* 일반 화면 복귀 플로팅 버튼 (항상 상단에 고정 표시) */}
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onToggleViewer}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900/95 hover:bg-slate-800 text-slate-100 hover:text-white border border-slate-700 shadow-2xl backdrop-blur-md text-xs font-bold active:scale-95 transition-all cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
+            <span>일반 화면 복귀</span>
+          </button>
+        </div>
+
+        {/* 90도 회전된 100% 모바일 가로 전광판 판 */}
+        <div
+          style={{
+            width: '100vh',
+            height: '100vw',
+            transform: 'rotate(90deg)',
+            transformOrigin: 'center center',
+            ...getBackgroundStyle(),
+          }}
+          className="relative flex items-center justify-center overflow-hidden transition-colors"
+        >
+          {/* 전광판 네온 텍스트 송출 영역 */}
+          <div className="relative w-full h-full flex items-center justify-center overflow-hidden px-8">
+            <div
+              style={{
+                color: textColor,
+                fontSize: `${basePx}px`,
+                ...getTextGlowStyle(),
+                ...getTextAnimationStyle(),
+              }}
+              className="font-black tracking-widest will-change-transform"
+            >
+              {displayText}
+            </div>
+          </div>
+        </div>
+
+        {/* 회전 모드 진입 시 가로 방향 안내 힌트 (잠깐 표시) */}
+        {showExitHint && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-black/85 border border-white/20 text-xs text-slate-300 backdrop-blur-md pointer-events-none animate-pulse flex items-center gap-2 shadow-2xl">
+            <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+            <span>스마트폰을 가로로 돌려 응원용 전광판으로 활용하세요!</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 2. 메인 페이지 내 16:9 가로형 실시간 미리보기 카드
   return (
     <div
-      ref={containerRef}
-      onClick={() => {
-        if (isFullscreen) {
-          setShowControlsInFullscreen((prev) => !prev);
-        }
-      }}
-      className={`relative select-none overflow-hidden transition-all duration-300 ${
-        isFullscreen
-          ? 'fixed inset-0 z-50 w-screen h-screen flex items-center justify-center bg-black cursor-pointer'
-          : 'w-full aspect-[16/9] max-h-[380px] rounded-2xl border border-slate-700/60 shadow-2xl shadow-cyan-950/20'
-      }`}
+      className="relative select-none overflow-hidden transition-all duration-300 w-full aspect-[16/9] max-h-[360px] rounded-2xl border border-slate-800 shadow-2xl shadow-cyan-950/20"
       style={getBackgroundStyle()}
     >
-      {/* 1. 배경 이펙트 레이어 (도트 매트릭스) */}
-      {bgEffect === 'dots' && (
-        <div className="absolute inset-0 led-dot-pattern pointer-events-none opacity-80" />
-      )}
+      {/* 베젤/프레임 내부 섀도우 */}
+      <div className="absolute inset-0 pointer-events-none border border-white/10 rounded-2xl shadow-[inset_0_0_35px_rgba(0,0,0,0.85)]" />
 
-      {/* 2. 배경 이펙트 레이어 (레트로 스캔라인) */}
-      {bgEffect === 'scanline' && (
-        <div className="absolute inset-0 led-scanline-pattern pointer-events-none opacity-70" />
-      )}
-
-      {/* 3. 베젤/프레임 내부 하이라이트 (미리보기 모드일 때 전광판 느낌 강조) */}
-      {!isFullscreen && (
-        <div className="absolute inset-0 pointer-events-none border border-white/10 rounded-2xl shadow-[inset_0_0_40px_rgba(0,0,0,0.85)]" />
-      )}
-
-      {/* 4. 텍스트 송출 영역 */}
+      {/* 텍스트 송출 영역 */}
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden px-4">
         <div
           style={{
-            ...textShadowStyle,
+            color: textColor,
+            fontSize: `${basePx}px`,
+            ...getTextGlowStyle(),
             ...getTextAnimationStyle(),
           }}
           className="font-black tracking-wider will-change-transform"
@@ -145,39 +201,18 @@ export default function LedDisplay({
         </div>
       </div>
 
-      {/* 5. 우측 상단 전체화면 토글 버튼 */}
-      {(!isFullscreen || showControlsInFullscreen) && (
-        <div className="absolute top-3 right-3 flex items-center gap-2 z-20">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleFullscreen();
-            }}
-            aria-label={isFullscreen ? '전체화면 종료' : '전체화면 시작'}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 hover:bg-black/90 text-slate-200 hover:text-white backdrop-blur-md border border-white/15 text-xs font-semibold shadow-lg transition-all"
-          >
-            {isFullscreen ? (
-              <>
-                <Minimize2 className="w-3.5 h-3.5 text-rose-400" />
-                <span>화면 나가기</span>
-              </>
-            ) : (
-              <>
-                <Maximize2 className="w-3.5 h-3.5 text-cyan-400" />
-                <span>전체화면</span>
-              </>
-            )}
-          </button>
-        </div>
-      )}
-
-      {/* 6. 전체화면 시 화면 터치 안내 힌트 (잠깐 표시) */}
-      {isFullscreen && showControlsInFullscreen && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/70 border border-white/15 text-[11px] text-slate-400 backdrop-blur-sm pointer-events-none animate-pulse">
-          화면을 터치하면 컨트롤이 나타나거나 숨겨집니다
-        </div>
-      )}
+      {/* 우측 상단 모바일 전체 화면 진입 버튼 */}
+      <div className="absolute top-3 right-3 flex items-center gap-2 z-20">
+        <button
+          type="button"
+          onClick={onToggleViewer}
+          aria-label="모바일 전체화면 시작"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-slate-200 hover:text-white backdrop-blur-md border border-white/15 text-xs font-semibold shadow-lg transition-all cursor-pointer"
+        >
+          <Maximize2 className="w-3.5 h-3.5 text-cyan-400" />
+          <span>전체화면 (응원 모드)</span>
+        </button>
+      </div>
     </div>
   );
 }

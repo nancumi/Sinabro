@@ -11,7 +11,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* LED 전광판 애니메이션 & 오버레이 */
+/* LED 전광판 애니메이션 */
 @keyframes ledMarqueeLeft {
   0% {
     transform: translateX(100%);
@@ -50,14 +50,41 @@ body {
 
 @keyframes ledGlowPulse {
   0%, 100% {
-    filter: drop-shadow(0 0 8px currentColor) brightness(1.2);
+    filter: brightness(1.1);
   }
   50% {
-    filter: drop-shadow(0 0 25px currentColor) drop-shadow(0 0 45px currentColor) brightness(1.8);
+    filter: brightness(1.75);
   }
 }
 
-@keyframes ledGradientShift {
+/* 배경 깜빡임 (스트로브 비트 점멸) */
+@keyframes ledBgStrobe {
+  0%, 45% {
+    opacity: 1;
+  }
+  50%, 95% {
+    opacity: 0.12;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* 네온 사이키 (RGB 색상 회전 변화) */
+@keyframes ledNeonCycle {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    filter: hue-rotate(180deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+/* 오로라 무대조명 그라데이션 */
+@keyframes ledAurora {
   0% {
     background-position: 0% 50%;
   }
@@ -67,19 +94,4 @@ body {
   100% {
     background-position: 0% 50%;
   }
-}
-
-.led-dot-pattern {
-  background-image: radial-gradient(rgba(0, 0, 0, 0.75) 30%, transparent 35%);
-  background-size: 6px 6px;
-}
-
-.led-scanline-pattern {
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.35),
-    rgba(0, 0, 0, 0.35) 2px,
-    transparent 2px,
-    transparent 4px
-  );
 }

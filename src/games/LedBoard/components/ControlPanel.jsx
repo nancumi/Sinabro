@@ -7,10 +7,13 @@ import {
   SlidersHorizontal,
   Maximize2,
   X,
+  SunMedium,
+  Layers,
 } from 'lucide-react';
 import {
   PALETTE_COLORS,
   TEXT_EFFECTS,
+  GLOW_LEVELS,
   BG_EFFECTS,
   FONT_SIZES,
   SPEEDS,
@@ -29,6 +32,8 @@ export default function ControlPanel({
   setBgColor,
   textEffect,
   setTextEffect,
+  glowLevel,
+  setGlowLevel,
   bgEffect,
   setBgEffect,
   fontSize,
@@ -39,35 +44,49 @@ export default function ControlPanel({
 }) {
   return (
     <div className="w-full bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-6">
-      {/* 탭 전환 헤더 */}
+      {/* 3단계 탭 전환 헤더 */}
       <div className="flex p-1 bg-slate-950/70 rounded-xl border border-slate-800">
         <button
           type="button"
           onClick={() => setActiveTab('color')}
-          className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 py-2.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
             activeTab === 'color'
               ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <Palette className="w-4 h-4" />
-          <span>1단계: 컬러 & 텍스트</span>
+          <Palette className="w-3.5 h-3.5" />
+          <span>1. 컬러 & 문구</span>
         </button>
+
         <button
           type="button"
-          onClick={() => setActiveTab('effect')}
-          className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'effect'
-              ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-md shadow-pink-500/20'
+          onClick={() => setActiveTab('text-effect')}
+          className={`flex-1 py-2.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            activeTab === 'text-effect'
+              ? 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-md shadow-pink-500/20'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <Sparkles className="w-4 h-4" />
-          <span>2단계: 모션 & 배경 효과</span>
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>2. 글자 효과</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('bg-effect')}
+          className={`flex-1 py-2.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            activeTab === 'bg-effect'
+              ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/20'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>3. 배경 효과</span>
         </button>
       </div>
 
-      {/* 1단계: 컬러 및 텍스트 설정 */}
+      {/* 1단계: 컬러 및 문구 설정 */}
       {activeTab === 'color' && (
         <div className="space-y-6 animate-fadeIn">
           {/* 텍스트 입력창 */}
@@ -85,7 +104,7 @@ export default function ControlPanel({
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 maxLength={30}
-                placeholder="표시할 문구를 입력하세요 (예: 시나브로)"
+                placeholder="표시할 문구를 입력하세요 (기본: 시나브로)"
                 className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm font-semibold text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 pr-10"
               />
               {text.length > 0 && (
@@ -119,7 +138,7 @@ export default function ControlPanel({
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block" />
-                배경색 선택 (10가지)
+                배경색 선택 (기본: 블랙)
               </label>
               <span className="text-[11px] text-slate-400">
                 {PALETTE_COLORS.find((c) => c.hex.toLowerCase() === bgColor.toLowerCase())?.name || bgColor}
@@ -198,33 +217,58 @@ export default function ControlPanel({
             </div>
           </div>
 
-          {/* 폰트 크기 선택 */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-300">글자 크기</label>
-            <div className="grid grid-cols-4 gap-2">
-              {FONT_SIZES.map((size) => (
-                <button
-                  key={size.id}
-                  type="button"
-                  onClick={() => setFontSize(size.id)}
-                  className={`py-2 rounded-xl text-xs font-semibold border transition-all ${
-                    fontSize === size.id
-                      ? 'bg-cyan-500/15 border-cyan-500/60 text-cyan-300 shadow-sm'
-                      : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {size.label}
-                </button>
-              ))}
+          {/* 폰트 크기 및 속도 설정 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-300">글자 크기</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {FONT_SIZES.map((size) => (
+                  <button
+                    key={size.id}
+                    type="button"
+                    onClick={() => setFontSize(size.id)}
+                    className={`py-2 rounded-xl text-xs font-semibold border transition-all ${
+                      fontSize === size.id
+                        ? 'bg-cyan-500/15 border-cyan-500/60 text-cyan-300 shadow-sm'
+                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {size.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <Gauge className="w-3.5 h-3.5 text-amber-400" />
+                모션 속도
+              </label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {SPEEDS.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSpeed(s.id)}
+                    className={`py-2 rounded-xl text-xs font-semibold border transition-all ${
+                      speed === s.id
+                        ? 'bg-amber-500/15 border-amber-500/60 text-amber-300 shadow-sm'
+                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 2단계: 효과 및 애니메이션 설정 */}
-      {activeTab === 'effect' && (
+      {/* 2단계: 글자 효과 및 외부 광선(Glow) 조절 */}
+      {activeTab === 'text-effect' && (
         <div className="space-y-6 animate-fadeIn">
-          {/* 글자 모션 효과 */}
+          {/* 글자 모션 효과 선택 */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-pink-400" />
@@ -257,13 +301,55 @@ export default function ControlPanel({
             </div>
           </div>
 
-          {/* 배경 모션 및 질감 효과 */}
+          {/* 외부 광선(Glow) 강도 조절 */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
-              배경 연출 및 텍스처 효과
+              <SunMedium className="w-3.5 h-3.5 text-amber-400" />
+              외부 광선 (네온 발광 후광 강도)
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {GLOW_LEVELS.map((g) => {
+                const isSelected = glowLevel === g.id;
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setGlowLevel(g.id)}
+                    className={`p-3 rounded-xl text-left border transition-all ${
+                      isSelected
+                        ? 'bg-amber-500/15 border-amber-500/70 text-white shadow-lg shadow-amber-500/15'
+                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="text-xs font-bold text-slate-200 mb-0.5 flex items-center justify-between">
+                      <span>{g.label}</span>
+                      {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                    </div>
+                    <div className="text-[11px] text-slate-500 leading-tight">
+                      {g.desc}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3단계: 배경 효과 (깔끔한 단색이 기본값으로 맨 왼쪽 배치) */}
+      {activeTab === 'bg-effect' && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
+                배경 연출 효과 선택
+              </label>
+              <span className="text-[11px] text-indigo-400 font-semibold">
+                기본값: 깔끔한 단색
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {BG_EFFECTS.map((bg) => {
                 const isSelected = bgEffect === bg.id;
                 return (
@@ -271,15 +357,15 @@ export default function ControlPanel({
                     key={bg.id}
                     type="button"
                     onClick={() => setBgEffect(bg.id)}
-                    className={`p-3 rounded-xl text-left border transition-all ${
+                    className={`p-3.5 rounded-xl text-left border transition-all ${
                       isSelected
-                        ? 'bg-cyan-500/15 border-cyan-500/70 text-white shadow-lg shadow-cyan-500/15'
+                        ? 'bg-indigo-500/15 border-indigo-500/70 text-white shadow-lg shadow-indigo-500/15'
                         : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
                     }`}
                   >
-                    <div className="text-xs font-bold text-slate-200 mb-0.5 flex items-center justify-between">
+                    <div className="text-xs font-bold text-slate-200 mb-1 flex items-center justify-between">
                       <span>{bg.label}</span>
-                      {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />}
+                      {isSelected && <span className="w-2 h-2 rounded-full bg-indigo-400" />}
                     </div>
                     <div className="text-[11px] text-slate-500 leading-tight">
                       {bg.desc}
@@ -289,34 +375,10 @@ export default function ControlPanel({
               })}
             </div>
           </div>
-
-          {/* 재생 속도 조절 */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <Gauge className="w-3.5 h-3.5 text-amber-400" />
-              모션 속도 조절
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {SPEEDS.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setSpeed(s.id)}
-                  className={`py-2 rounded-xl text-xs font-semibold border transition-all ${
-                    speed === s.id
-                      ? 'bg-amber-500/15 border-amber-500/60 text-amber-300 shadow-sm'
-                      : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 
-      {/* 최종 전광판 출력 뷰 CTA 버튼 */}
+      {/* 모바일 가로 9:16 전광판 전체화면 CTA 버튼 */}
       <div className="pt-2">
         <button
           type="button"
@@ -324,10 +386,10 @@ export default function ControlPanel({
           className="w-full py-4 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-pink-500 hover:from-cyan-400 hover:to-pink-400 shadow-xl shadow-cyan-500/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <Maximize2 className="w-4 h-4" />
-          <span>응원 전광판 전체화면 재생하기 (응원봉 대용)</span>
+          <span>모바일 가로 9:16 전광판 켜기 (응원 모드)</span>
         </button>
         <p className="text-center text-[11px] text-slate-500 mt-2">
-          스마트폰을 가로로 돌리고 전체화면을 켜면 콘서트, 경기장, 파티에서 멋진 응원 도구가 됩니다.
+          전체화면 전환 시 글자가 90도 회전되어 스마트폰을 쥐고 응원하기에 최적화됩니다.
         </p>
       </div>
     </div>
