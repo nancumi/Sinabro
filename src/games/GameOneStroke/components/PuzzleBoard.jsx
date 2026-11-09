@@ -159,7 +159,11 @@ export default function PuzzleBoard({
 
         // 모든 선을 전부 다 지나쳤는지 클리어 체크
         if (nextTraversed.size === edges.length) {
+          try {
+            e.target?.releasePointerCapture?.(e.pointerId);
+          } catch {}
           setIsPointerDown(false);
+          setDragPoint(null);
           oneStrokeSound.playStageClear();
           onStageClear();
         }
