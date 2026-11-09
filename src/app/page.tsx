@@ -128,11 +128,11 @@ export default function HomePage() {
       url.searchParams.set('title', item.title);
       window.history.replaceState(null, '', url.toString());
 
-      // 모바일의 경우 화면 맨 위에서 150px 스크롤하여 게임 화면을 정확히 맞춤
+      // 모바일의 경우 화면 맨 위에서 50px만 스크롤하여 최적의 높이로 맞춤
       setTimeout(() => {
         const isMobile = window.innerWidth < 1024;
         if (isMobile) {
-          window.scrollTo({ top: 150, behavior: 'smooth' });
+          window.scrollTo({ top: 50, behavior: 'smooth' });
         } else {
           const viewer = document.getElementById('game-viewer-section');
           if (viewer) {
@@ -153,11 +153,14 @@ export default function HomePage() {
         onOpenAdConfig={() => setIsAdConfigModalOpen(true)}
       />
 
-      {/* 카테고리 네비게이션 탭 */}
+      {/* 카테고리 네비게이션 탭 (서브메뉴 드롭다운 포함) */}
       <CategoryNav
         categories={categories}
         selectedCategoryId={selectedCategoryId}
         onSelectCategory={setSelectedCategoryId}
+        contents={contents}
+        selectedContentId={selectedContent?.id || null}
+        onSelectContent={handleSelectContent}
         isAdmin={isAdmin}
         onOpenAdmin={() => setIsAdminModalOpen(true)}
       />
