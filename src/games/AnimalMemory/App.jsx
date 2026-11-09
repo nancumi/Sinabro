@@ -1,12 +1,22 @@
 'use client';
-import React, { useState, useCallback, useRef } from 'react';
-import { RotateCcw, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { RotateCcw, Volume2, VolumeX, AlertOctagon } from 'lucide-react';
 import SetupScreen from './components/SetupScreen';
 import GameBoard from './components/GameBoard';
 import PlayerTurnBanner from './components/PlayerTurnBanner';
-import TurnTransitionModal from './components/TurnTransitionModal';
 import GameOverModal from './components/GameOverModal';
+import { ANIMALS } from './utils/animals';
 import { sound } from './utils/sound';
+
+// 게임 시작 시 16마리 동물 무작위 셔플 함수
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 export default function App() {
   const [screen, setScreen] = useState('SETUP'); // 'SETUP' | 'PLAYING' | 'WINNER'
@@ -14,19 +24,15 @@ export default function App() {
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [sequence, setSequence] = useState([]); // [animalId1, animalId2, ...]
   const [inputStep, setInputStep] = useState(0); // 현재 턴에서 입력 중인 인덱스
+  const [boardAnimals, setBoardAnimals] = useState(() => shuffleArray(ANIMALS));
 
   // 타일 애니메이션 피드백 상태
   const [activeTileId, setActiveTileId] = useState(null);
   const [statusEffect, setStatusEffect] = useState(null);
   const [isInputLocked, setIsInputLocked] = useState(false);
 
-  // 턴 전환 / 탈락 모달 상태
-  const [transitionState, setTransitionState] = useState({
-    isOpen: false,
-    type: 'nextTurn',
-    eliminatedPlayer: null,
-    nextPlayer: null,
-  });
+  // 일시적 탈락 알림 토스트 (방해되지 않는 상단 토스트)
+  const [eliminatedToast, setEliminatedToast] = useState(null);
 
   // 최종 우승자
   const [winner, setWinner] = useState(null);
@@ -38,23 +44,26 @@ export default function App() {
     setIsMuted(muted);
   };
 
-  // 게임 시작
+  // 게임 시작 (동물 무작위 배치 셔플)
   const handleStartGame = (initialPlayers) => {
+    setBoardAnimals(shuffleArray(ANIMALS));
     setPlayers(initialPlayers);
     setCurrentPlayerIndex(0);
     setSequence([]);
     setInputStep(0);
     setWinner(null);
+    setEliminatedToast(null);
     setScreen('PLAYING');
   };
 
   // 게임 초기화 (설정 화면으로 복귀)
   const handleRestart = () => {
+    setBoardAnimals(shuffleArray(ANIMALS));
     setScreen('SETUP');
     setSequence([]);
     setInputStep(0);
     setWinner(null);
-    setTransitionState({ isOpen: false, type: 'nextTurn', eliminatedPlayer: null, nextPlayer: null });
+    setEliminatedToast(null);
   };
 
   // 다음 생존 플레이어 인덱스 찾기
@@ -116,22 +125,20 @@ export default function App() {
             setScreen('WINNER');
             setIsInputLocked(false);
           } else {
-            // 서바이벌 계속: 다음 생존 플레이어에게 턴 전환
+            // 서바이벌 계속: 팝업 모달 없이 가벼운 토스트 후 바로 다음 생존자 턴 전환
+            setEliminatedToast(`${eliminatedPlayer.name} 탈락!`);
             const nextIdx = getNextSurvivingPlayerIndex(currentPlayerIndex, updatedPlayers);
-            setTransitionState({
-              isOpen: true,
-              type: 'eliminated',
-              eliminatedPlayer,
-              nextPlayer: updatedPlayers[nextIdx],
-            });
-            setCurrentPlayerIndex(nextIdx);
-            setInputStep(0);
-            setIsInputLocked(false);
+            setTimeout(() => {
+              setEliminatedToast(null);
+              setCurrentPlayerIndex(nextIdx);
+              setInputStep(0);
+              setIsInputLocked(false);
+            }, 800);
           }
 
           setActiveTileId(null);
           setStatusEffect(null);
-        }, 650);
+        }, 550);
       }
     } else {
       // 2. 기존 시퀀스를 모두 맞추고 "새로운 동물 1개 추가" 단계
@@ -142,26 +149,16 @@ export default function App() {
       const newSequence = [...sequence, animalId];
       setSequence(newSequence);
 
+      // 흐름을 방해하는 알림 팝업 없이 곧바로 다음 플레이어로 턴 전환!
       setTimeout(() => {
         const nextIdx = getNextSurvivingPlayerIndex(currentPlayerIndex, players);
-        setTransitionState({
-          isOpen: true,
-          type: 'nextTurn',
-          eliminatedPlayer: null,
-          nextPlayer: players[nextIdx],
-        });
         setCurrentPlayerIndex(nextIdx);
         setInputStep(0);
         setIsInputLocked(false);
         setActiveTileId(null);
         setStatusEffect(null);
-      }, 500);
+      }, 300);
     }
-  };
-
-  // 모달 닫고 다음 플레이어 도전 시작
-  const handleProceedNextTurn = () => {
-    setTransitionState((prev) => ({ ...prev, isOpen: false }));
   };
 
   return (
@@ -202,7 +199,15 @@ export default function App() {
       {screen === 'SETUP' && <SetupScreen onStartGame={handleStartGame} />}
 
       {screen === 'PLAYING' && (
-        <div className="w-full flex flex-col items-center">
+        <div className="w-full flex flex-col items-center relative">
+          {/* 탈락 시 잠시 뜨는 깔끔한 토스트 알림 */}
+          {eliminatedToast && (
+            <div className="absolute top-12 z-30 px-4 py-2 rounded-xl bg-rose-500/90 text-white font-extrabold text-[12px] shadow-lg shadow-rose-500/30 flex items-center gap-1.5 animate-bounce">
+              <AlertOctagon size={14} />
+              <span>{eliminatedToast}</span>
+            </div>
+          )}
+
           {/* 플레이어 턴 상태 배너 */}
           <PlayerTurnBanner
             players={players}
@@ -211,10 +216,11 @@ export default function App() {
             inputStep={inputStep}
           />
 
-          {/* 4x4 동물 그리드 보드 */}
+          {/* 4x4 동물 그리드 보드 (랜덤 셔플 배치) */}
           <GameBoard
+            animals={boardAnimals}
             onTileClick={handleTileClick}
-            disabled={isInputLocked || transitionState.isOpen}
+            disabled={isInputLocked}
             activeTileId={activeTileId}
             statusEffect={statusEffect}
           />
@@ -234,17 +240,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 3. 턴 전환 / 탈락 모달 */}
-      <TurnTransitionModal
-        isOpen={transitionState.isOpen}
-        type={transitionState.type}
-        eliminatedPlayer={transitionState.eliminatedPlayer}
-        nextPlayer={transitionState.nextPlayer}
-        sequenceLength={sequence.length}
-        onProceed={handleProceedNextTurn}
-      />
-
-      {/* 4. 최후의 1인 우승 모달 */}
+      {/* 3. 최후의 1인 우승 모달 */}
       {screen === 'WINNER' && (
         <GameOverModal
           winner={winner}

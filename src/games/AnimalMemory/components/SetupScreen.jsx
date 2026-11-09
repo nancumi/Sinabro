@@ -4,7 +4,7 @@ import { PLAYER_COLORS } from '../utils/animals';
 import { sound } from '../utils/sound';
 
 export default function SetupScreen({ onStartGame }) {
-  const [playerCount, setPlayerCount] = useState(3);
+  const [playerCount, setPlayerCount] = useState(2);
   const [playerNames, setPlayerNames] = useState([
     '플레이어 1',
     '플레이어 2',
@@ -40,23 +40,7 @@ export default function SetupScreen({ onStartGame }) {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto flex flex-col items-center gap-4 py-2 animate-fade-in select-none">
-      {/* 1. 상단 아이콘 및 안내 타이틀 */}
-      <div className="flex flex-col items-center text-center">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500/20 via-indigo-500/20 to-purple-500/20 border border-sky-500/30 flex items-center justify-center text-2xl mb-2 shadow-[0_0_25px_rgba(56,189,248,0.25)]">
-          🦁
-        </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-950/60 border border-sky-500/30 text-sky-300 text-[11px] font-semibold mb-1">
-          <Brain size={12} className="text-sky-400" />
-          <span>파티 암기 서바이벌</span>
-        </div>
-        <h2 className="text-[19px] font-black text-white tracking-tight">
-          동물 기억력 릴레이
-        </h2>
-        <p className="text-[11px] text-slate-400 mt-1 max-w-xs leading-relaxed">
-          앞사람이 누른 동물 순서를 똑같이 기억하고 새로운 동물을 1개씩 추가하세요!
-        </p>
-      </div>
+    <div className="w-full max-w-md mx-auto flex flex-col items-center gap-3 py-1 animate-fade-in select-none">
 
       {/* 2. 플레이어 인원 설정 카드 */}
       <div className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl">
@@ -151,3 +135,4 @@ export default function SetupScreen({ onStartGame }) {
     </div>
   );
 }
+

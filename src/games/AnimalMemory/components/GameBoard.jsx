@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ANIMALS } from '../utils/animals';
 
 export default function GameBoard({
+  animals = ANIMALS,
   onTileClick,
   disabled,
   activeTileId,
@@ -10,7 +11,7 @@ export default function GameBoard({
   return (
     <div className="w-full max-w-[360px] sm:max-w-[380px] aspect-square mx-auto p-2 bg-slate-900/90 border border-slate-800 rounded-3xl shadow-2xl flex items-center justify-center select-none touch-none">
       <div className="grid grid-cols-4 grid-rows-4 gap-2 w-full h-full">
-        {ANIMALS.map((animal) => {
+        {animals.map((animal) => {
           const isActive = activeTileId === animal.id;
 
           let highlightClasses = 'border-slate-800/80 bg-slate-950/60 hover:border-slate-700 hover:bg-slate-800/50';
@@ -56,3 +57,4 @@ export default function GameBoard({
     </div>
   );
 }
+
