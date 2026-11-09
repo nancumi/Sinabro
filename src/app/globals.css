@@ -11,25 +11,26 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* LED 전광판 애니메이션 */
-@keyframes ledMarqueeLeft {
+/* LED 전광판 무한 연속 롤링 (Seamless Marquee) */
+@keyframes ledSeamlessLeft {
   0% {
-    transform: translateX(100%);
+    transform: translateX(0);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translateX(-50%);
   }
 }
 
-@keyframes ledMarqueeRight {
+@keyframes ledSeamlessRight {
   0% {
-    transform: translateX(-100%);
+    transform: translateX(-50%);
   }
   100% {
-    transform: translateX(100%);
+    transform: translateX(0);
   }
 }
 
+/* 점멸 깜빡이기 (글자) */
 @keyframes ledBlink {
   0%, 49% {
     opacity: 1;
@@ -39,6 +40,7 @@ body {
   }
 }
 
+/* 통통 튀기 */
 @keyframes ledBounce {
   0%, 100% {
     transform: translateY(0);
@@ -48,6 +50,7 @@ body {
   }
 }
 
+/* 네온 펄스 글로우 */
 @keyframes ledGlowPulse {
   0%, 100% {
     filter: brightness(1.1);

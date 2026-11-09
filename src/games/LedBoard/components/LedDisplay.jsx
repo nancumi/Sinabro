@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Maximize2, RotateCcw, X, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Maximize2, RotateCcw, Sparkles } from 'lucide-react';
 import { SPEEDS, FONT_SIZES } from '../utils/constants';
 
 export default function LedDisplay({
@@ -36,21 +36,29 @@ export default function LedDisplay({
     return () => clearTimeout(timer);
   }, [isViewerOpen]);
 
-  // 글자 애니메이션 스타일 생성
-  const getTextAnimationStyle = () => {
+  // 외부 광선(Glow) 효과 계산
+  const getTextGlowStyle = () => {
+    switch (glowLevel) {
+      case 'none':
+        return { textShadow: 'none' };
+      case 'soft':
+        return { textShadow: `0 0 8px ${textColor}aa` };
+      case 'neon':
+        return {
+          textShadow: `0 0 6px ${textColor}, 0 0 16px ${textColor}, 0 0 35px ${textColor}99`,
+        };
+      case 'intense':
+        return {
+          textShadow: `0 0 6px #ffffff, 0 0 18px ${textColor}, 0 0 38px ${textColor}, 0 0 70px ${textColor}, 0 0 110px ${textColor}`,
+        };
+      default:
+        return { textShadow: `0 0 8px ${textColor}` };
+    }
+  };
+
+  // 고정형 애니메이션 스타일 생성 (깜빡임, 바운스, 펄스)
+  const getStaticTextAnimationStyle = () => {
     switch (textEffect) {
-      case 'marquee-right':
-        return {
-          animation: `ledMarqueeRight ${speedSec}s linear infinite`,
-          display: 'inline-block',
-          whiteSpace: 'nowrap',
-        };
-      case 'marquee-left':
-        return {
-          animation: `ledMarqueeLeft ${speedSec}s linear infinite`,
-          display: 'inline-block',
-          whiteSpace: 'nowrap',
-        };
       case 'blink':
         return {
           animation: `ledBlink ${Math.max(0.4, speedSec * 0.12)}s step-start infinite`,
@@ -71,26 +79,6 @@ export default function LedDisplay({
         return {
           whiteSpace: 'nowrap',
         };
-    }
-  };
-
-  // 외부 광선(Glow) 효과 계산
-  const getTextGlowStyle = () => {
-    switch (glowLevel) {
-      case 'none':
-        return { textShadow: 'none' };
-      case 'soft':
-        return { textShadow: `0 0 8px ${textColor}aa` };
-      case 'neon':
-        return {
-          textShadow: `0 0 6px ${textColor}, 0 0 16px ${textColor}, 0 0 35px ${textColor}99`,
-        };
-      case 'intense':
-        return {
-          textShadow: `0 0 6px #ffffff, 0 0 18px ${textColor}, 0 0 38px ${textColor}, 0 0 70px ${textColor}, 0 0 110px ${textColor}`,
-        };
-      default:
-        return { textShadow: `0 0 8px ${textColor}` };
     }
   };
 
@@ -122,12 +110,99 @@ export default function LedDisplay({
   };
 
   const displayText = text.trim() === '' ? '시나브로' : text;
+  const isMarquee = textEffect === 'marquee-left' || textEffect === 'marquee-right';
 
-  // 1. 모바일 전용 9:16 회전 100% 전체화면 뷰 (웹 내부 판)
+  // 텍스트 송출 렌더러 (마키는 빈틈없는 무한 루프, 그 외는 중앙 배치)
+  const renderContent = () => {
+    if (isMarquee) {
+      const isLeft = textEffect === 'marquee-left';
+      return (
+        <div className="relative w-full h-full flex items-center overflow-hidden">
+          <div
+            style={{
+              animation: `${isLeft ? 'ledSeamlessLeft' : 'ledSeamlessRight'} ${speedSec}s linear infinite`,
+            }}
+            className="flex items-center shrink-0 w-max will-change-transform select-none"
+          >
+            {/* 전반부 (Half 1) */}
+            <div className="flex items-center shrink-0">
+              <span
+                style={{
+                  color: textColor,
+                  fontSize: `${basePx}px`,
+                  ...getTextGlowStyle(),
+                }}
+                className="px-8 sm:px-14 inline-block font-black tracking-widest whitespace-nowrap"
+              >
+                {displayText}
+              </span>
+              {displayText.length <= 8 && (
+                <span
+                  style={{
+                    color: textColor,
+                    fontSize: `${basePx}px`,
+                    ...getTextGlowStyle(),
+                  }}
+                  className="px-8 sm:px-14 inline-block font-black tracking-widest whitespace-nowrap"
+                >
+                  {displayText}
+                </span>
+              )}
+            </div>
+
+            {/* 후반부 쌍둥이 트랙 (Half 2 - 한쪽에서 사라짐과 동시에 다른 쪽에서 나타남) */}
+            <div className="flex items-center shrink-0">
+              <span
+                style={{
+                  color: textColor,
+                  fontSize: `${basePx}px`,
+                  ...getTextGlowStyle(),
+                }}
+                className="px-8 sm:px-14 inline-block font-black tracking-widest whitespace-nowrap"
+              >
+                {displayText}
+              </span>
+              {displayText.length <= 8 && (
+                <span
+                  style={{
+                    color: textColor,
+                    fontSize: `${basePx}px`,
+                    ...getTextGlowStyle(),
+                  }}
+                  className="px-8 sm:px-14 inline-block font-black tracking-widest whitespace-nowrap"
+                >
+                  {displayText}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // 깜빡임, 통통 튀기, 네온 펄스, 고정 모드
+    return (
+      <div className="relative w-full h-full flex items-center justify-center overflow-hidden px-4">
+        <div
+          style={{
+            color: textColor,
+            fontSize: `${basePx}px`,
+            ...getTextGlowStyle(),
+            ...getStaticTextAnimationStyle(),
+          }}
+          className="font-black tracking-wider will-change-transform text-center"
+        >
+          {displayText}
+        </div>
+      </div>
+    );
+  };
+
+  // 1. 모바일 전용 9:16(16:9 회전) 100% 비율 최우선 전체 뷰 모드
   if (isViewerOpen) {
     return (
       <div className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden select-none">
-        {/* 일반 화면 복귀 플로팅 버튼 (항상 상단에 고정 표시) */}
+        {/* 일반 화면 복귀 플로팅 버튼 */}
         <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
           <button
             type="button"
@@ -139,38 +214,26 @@ export default function LedDisplay({
           </button>
         </div>
 
-        {/* 90도 회전된 100% 모바일 가로 전광판 판 */}
+        {/* 16:9 비율 최우선 유지 + 화면 최대 100% 채움 + 90도 회전된 가로 전광판 */}
         <div
           style={{
-            width: '100vh',
-            height: '100vw',
+            width: 'min(100vh, calc(100vw * 16 / 9))',
+            height: 'min(100vw, calc(100vh * 9 / 16))',
+            aspectRatio: '16 / 9',
             transform: 'rotate(90deg)',
             transformOrigin: 'center center',
             ...getBackgroundStyle(),
           }}
-          className="relative flex items-center justify-center overflow-hidden transition-colors"
+          className="relative flex items-center justify-center overflow-hidden transition-colors shadow-2xl"
         >
-          {/* 전광판 네온 텍스트 송출 영역 */}
-          <div className="relative w-full h-full flex items-center justify-center overflow-hidden px-8">
-            <div
-              style={{
-                color: textColor,
-                fontSize: `${basePx}px`,
-                ...getTextGlowStyle(),
-                ...getTextAnimationStyle(),
-              }}
-              className="font-black tracking-widest will-change-transform"
-            >
-              {displayText}
-            </div>
-          </div>
+          {renderContent()}
         </div>
 
-        {/* 회전 모드 진입 시 가로 방향 안내 힌트 (잠깐 표시) */}
+        {/* 회전 모드 진입 시 가로 방향 안내 힌트 */}
         {showExitHint && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-black/85 border border-white/20 text-xs text-slate-300 backdrop-blur-md pointer-events-none animate-pulse flex items-center gap-2 shadow-2xl">
             <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
-            <span>스마트폰을 가로로 돌려 응원용 전광판으로 활용하세요!</span>
+            <span>16:9 가로 비율 최우선 모드입니다. 스마트폰을 가로로 돌려 응원하세요!</span>
           </div>
         )}
       </div>
@@ -187,19 +250,7 @@ export default function LedDisplay({
       <div className="absolute inset-0 pointer-events-none border border-white/10 rounded-2xl shadow-[inset_0_0_35px_rgba(0,0,0,0.85)]" />
 
       {/* 텍스트 송출 영역 */}
-      <div className="relative w-full h-full flex items-center justify-center overflow-hidden px-4">
-        <div
-          style={{
-            color: textColor,
-            fontSize: `${basePx}px`,
-            ...getTextGlowStyle(),
-            ...getTextAnimationStyle(),
-          }}
-          className="font-black tracking-wider will-change-transform"
-        >
-          {displayText}
-        </div>
-      </div>
+      {renderContent()}
 
       {/* 우측 상단 모바일 전체 화면 진입 버튼 */}
       <div className="absolute top-3 right-3 flex items-center gap-2 z-20">
