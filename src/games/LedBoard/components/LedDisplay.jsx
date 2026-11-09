@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Maximize2, RotateCcw, Sparkles } from 'lucide-react';
+import { Maximize2, RotateCcw } from 'lucide-react';
 import { SPEEDS, FONT_SIZES, BOARD_WIDTH, BOARD_HEIGHT } from '../utils/constants';
 
 export default function LedDisplay({
@@ -14,10 +14,42 @@ export default function LedDisplay({
   isViewerOpen = false,
   onToggleViewer,
 }) {
-  const [showExitHint, setShowExitHint] = useState(true);
+  const [showControls, setShowControls] = useState(false);
   const [fullScale, setFullScale] = useState(1);
   const [previewWidth, setPreviewWidth] = useState(854);
   const previewRef = useRef(null);
+  const hideTimerRef = useRef(null);
+
+  // 전체 화면 모드 진입 시 버튼 잠깐 보여주고 2.5초 후 자동 숨김
+  useEffect(() => {
+    if (isViewerOpen) {
+      setShowControls(true);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = setTimeout(() => {
+        setShowControls(false);
+      }, 2500);
+    } else {
+      setShowControls(false);
+    }
+
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [isViewerOpen]);
+
+  // 화면 터치 시 버튼 토글 및 3.5초 자동 숨김 타이머
+  const handleScreenTap = () => {
+    setShowControls((prev) => {
+      const next = !prev;
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      if (next) {
+        hideTimerRef.current = setTimeout(() => {
+          setShowControls(false);
+        }, 3500);
+      }
+      return next;
+    });
+  };
 
   // 전체화면 모드 스케일 계산 (854 x 480 규격을 기기 화면에 100% 최적 밀착 맞춤)
   useEffect(() => {
@@ -60,18 +92,6 @@ export default function LedDisplay({
   const currentFontSize = FONT_SIZES.find((f) => f.id === fontSize) || FONT_SIZES[2];
   const previewScale = previewWidth > 0 ? previewWidth / BOARD_WIDTH : 0.5;
   const basePx = isViewerOpen ? currentFontSize.px : Math.max(20, Math.round(currentFontSize.px * previewScale));
-
-  // 전체 화면 모드 진입 시 3초 후 힌트 숨김
-  useEffect(() => {
-    if (!isViewerOpen) {
-      setShowExitHint(true);
-      return;
-    }
-    const timer = setTimeout(() => {
-      setShowExitHint(false);
-    }, 3500);
-    return () => clearTimeout(timer);
-  }, [isViewerOpen]);
 
   // 외부 광선(Glow) 효과 계산
   const getTextGlowStyle = () => {
@@ -238,12 +258,22 @@ export default function LedDisplay({
   // 1. 모바일 전용 854 x 480 px 규격 고정 + 90도 회전 전체 화면 모드
   if (isViewerOpen) {
     return (
-      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden select-none">
-        {/* 일반 화면 복귀 플로팅 버튼 */}
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+      <div
+        onClick={handleScreenTap}
+        className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden select-none cursor-pointer"
+      >
+        {/* 일반 화면 복귀 플로팅 버튼 (화면 터치 시에만 표시) */}
+        <div
+          className={`fixed top-4 right-4 z-50 transition-opacity duration-300 ${
+            showControls ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+        >
           <button
             type="button"
-            onClick={onToggleViewer}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleViewer();
+            }}
             className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900/95 hover:bg-slate-800 text-slate-100 hover:text-white border border-slate-700 shadow-2xl backdrop-blur-md text-xs font-bold active:scale-95 transition-all cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
@@ -260,18 +290,10 @@ export default function LedDisplay({
             transformOrigin: 'center center',
             ...getBackgroundStyle(),
           }}
-          className="relative flex items-center justify-center overflow-hidden shrink-0 shadow-2xl transition-colors"
+          className="relative flex items-center justify-center overflow-hidden shrink-0 shadow-2xl transition-colors pointer-events-none"
         >
           {renderContent()}
         </div>
-
-        {/* 회전 모드 진입 안내 힌트 */}
-        {showExitHint && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-black/85 border border-white/20 text-xs text-slate-300 backdrop-blur-md pointer-events-none animate-pulse flex items-center gap-2 shadow-2xl">
-            <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
-            <span>854 × 480 규격 모드입니다. 스마트폰을 가로로 돌려 응원하세요!</span>
-          </div>
-        )}
       </div>
     );
   }
