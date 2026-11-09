@@ -78,6 +78,14 @@ export const GAME_REGISTRY: Record<string, React.ComponentType> = {
       </div>
     ),
   }),
+  'animal-memory': dynamic(() => import('./AnimalMemory/App'), {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center p-12 text-slate-400 text-[12px]">
+        게임을 로딩하는 중입니다...
+      </div>
+    ),
+  }),
 };
 
 // 콘텐츠 제목 또는 URL로 등록된 게임 키를 자동으로 매칭
@@ -85,6 +93,7 @@ export function getGameKey(title: string = '', url: string = ''): string | null 
   const t = title.toLowerCase();
   const u = url.toLowerCase();
 
+  if (t.includes('동물') || t.includes('기억력') || t.includes('animal') || u.includes('animal') || u.includes('memory')) return 'animal-memory';
   if (t.includes('한 붓') || t.includes('한붓') || t.includes('stroke') || u.includes('onestroke') || u.includes('stroke')) return 'one-stroke';
   if (t.includes('시간') || t.includes('타이머') || u.includes('timer')) return 'timer';
   if (t.includes('손가락') || t.includes('터치') || u.includes('finger-touch') || u.includes('touch')) return 'finger-touch';

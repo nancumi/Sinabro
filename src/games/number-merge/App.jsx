@@ -270,9 +270,8 @@ export default function App() {
 
         {/* 메인 격자판 */}
         <div
-          className={`w-full aspect-square bg-slate-900 border border-slate-800/90 rounded-2xl p-2 sm:p-2.5 shadow-2xl relative grid ${
-            gridClassMap[gridSize] || gridClassMap[4]
-          }`}
+          className={`w-full aspect-square bg-slate-900 border border-slate-800/90 rounded-2xl p-2 sm:p-2.5 shadow-2xl relative grid ${gridClassMap[gridSize] || gridClassMap[4]
+            }`}
         >
           {board.map((row, r) =>
             row.map((tile, c) => (
