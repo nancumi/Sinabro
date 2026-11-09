@@ -358,3 +358,4 @@ export function getStageData(stageNumber) {
   }
   return generateProceduralStage(stageNumber);
 }
+

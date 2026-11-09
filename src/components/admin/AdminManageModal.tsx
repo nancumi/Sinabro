@@ -4,8 +4,57 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '@/components/common/Modal';
 import { Pagination } from '@/components/common/Pagination';
 import { Category, ContentItem } from '@/types';
-import { Trash2, Plus, Edit2, Link as LinkIcon, FolderPlus } from 'lucide-react';
+import { Trash2, Plus, Edit2, Link as LinkIcon, FolderPlus, Sparkles, Gamepad2 } from 'lucide-react';
 import { useAppModal } from '@/context/ModalContext';
+import { getGameKey } from '@/games';
+
+const NATIVE_GAME_PRESETS = [
+  {
+    title: '한 붓 그리기',
+    desc: '손가락을 떼지 않고 점과 선을 모두 연결해 도형을 완성하는 중독성 있는 두뇌 퍼즐 게임!',
+    catKeyword: '두뇌',
+  },
+  {
+    title: '시간 맞추기',
+    desc: '여러명이서 주어진 시간을 감으로 가장 가깝게 맞추는 게임으로 1등 또는 꼴등을 가릴 수 있다.',
+    catKeyword: '반응',
+  },
+  {
+    title: '룰렛 돌리기',
+    desc: '참가자와 항목을 입력하고 룰렛을 돌려 당첨자를 뽑는 복불복 게임!',
+    catKeyword: '복불복',
+  },
+  {
+    title: '손가락 터치 룰렛',
+    desc: '화면에 손가락을 올리고 3초 만에 참여해 당첨자를 뽑는 쫄깃한 심심풀이 게임!',
+    catKeyword: '복불복',
+  },
+  {
+    title: '사다리 타기',
+    desc: '사다리를 타며 1명을 뽑는 복불복 게임!',
+    catKeyword: '복불복',
+  },
+  {
+    title: '두더지 팡팡',
+    desc: '30초 동안 구멍에서 나오는 두더지를 잡아 최고 점수를 경신하는 게임!',
+    catKeyword: '반응',
+  },
+  {
+    title: '2048 숫자 합치기',
+    desc: '같은 숫자를 합쳐 더 큰 숫자를 만드는 퍼즐 게임!',
+    catKeyword: '두뇌',
+  },
+  {
+    title: '반사신경 테스트',
+    desc: '신호가 바뀔 때 화면을 가장 빠르게 터치하여 반응 속도를 측정하는 게임!',
+    catKeyword: '반응',
+  },
+  {
+    title: '슬라이딩 퍼즐',
+    desc: '랜덤으로 주어지는 이미지를 빈칸을 밀며 완성하는 퍼즐 게임!',
+    catKeyword: '두뇌',
+  },
+];
 
 interface AdminManageModalProps {
   isOpen: boolean;
@@ -200,7 +249,7 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            콘텐츠 및 Vercel URL 관리 ({contents.length})
+            콘텐츠 관리 ({contents.length})
           </button>
         </div>
 
@@ -300,12 +349,42 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
           </div>
         )}
 
-        {/* 콘텐츠 및 Vercel URL 관리 탭 */}
+        {/* 콘텐츠 관리 탭 */}
         {activeTab === 'content' && (
-          <div className="space-y-4">
+          <div className="space-y-3">
+            {/* 내장 게임 원클릭 간편 프리셋 등록 */}
+            {!editingContentId && (
+              <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>내장 게임 간편 등록 (클릭 시 자동 입력)</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {NATIVE_GAME_PRESETS.map((p) => (
+                    <button
+                      key={p.title}
+                      type="button"
+                      onClick={() => {
+                        setContentTitle(p.title);
+                        setContentDesc(p.desc);
+                        setContentVercelUrl('');
+                        const matchedCat = categories.find((c) => c.name.includes(p.catKeyword));
+                        if (matchedCat) {
+                          setSelectedCatId(matchedCat.id);
+                        }
+                      }}
+                      className="px-2 py-1 rounded-md text-[11px] bg-slate-800/80 hover:bg-slate-700 text-sky-300 border border-slate-700/60 transition-colors cursor-pointer"
+                    >
+                      + {p.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2.5">
               <div className="text-[11px] font-semibold text-slate-300">
-                {editingContentId ? '콘텐츠 정보 수정' : '새 Vercel 콘텐츠 등록'}
+                {editingContentId ? '콘텐츠 정보 수정' : '새 콘텐츠 등록'}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
@@ -330,7 +409,7 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
                     type="text"
                     value={contentTitle}
                     onChange={(e) => setContentTitle(e.target.value)}
-                    placeholder="예: 반응속도 테스트, 미니 계산기"
+                    placeholder="예: 한 붓 그리기, 시간 맞추기"
                     className="w-full px-2.5 py-1.5 text-[12px] bg-slate-900 border border-slate-800 rounded-md text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
                   />
                 </div>
@@ -339,17 +418,17 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
               <div>
                 <label className="block text-[11px] text-slate-400 mb-1 flex items-center gap-1">
                   <LinkIcon className="w-3 h-3 text-sky-400" />
-                  실행될 Vercel 주소 (URL)
+                  외부 연결 URL (선택 사항)
                 </label>
                 <input
                   type="text"
                   value={contentVercelUrl}
                   onChange={(e) => setContentVercelUrl(e.target.value)}
-                  placeholder="https://my-content.vercel.app"
+                  placeholder="내장 게임은 비워두세요 (외부 사이트 연결 시에만 입력)"
                   className="w-full px-2.5 py-1.5 text-[12px] bg-slate-900 border border-slate-800 rounded-md text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
                 />
-                <span className="text-[11px] text-slate-500 block mt-0.5">
-                  * 다른 작업폴더에서 제작하여 Vercel에 배포한 주소를 입력하면 해당 영역에 즉시 실행됩니다.
+                <span className="text-[11px] text-emerald-400/90 block mt-0.5">
+                  * 시나브로 내장 게임은 주소를 비워두셔도 콘텐츠 이름으로 즉시 자동 실행됩니다.
                 </span>
               </div>
 
@@ -425,6 +504,7 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
               ) : (
                 paginatedContents.map((item) => {
                   const catName = categories.find((c) => c.id === item.categoryId)?.name || '미지정';
+                  const isNative = Boolean(getGameKey(item.title, item.vercelUrl));
                   return (
                     <div key={item.id} className="flex items-center justify-between p-2.5 hover:bg-slate-800/40">
                       <div className="space-y-0.5 flex-1 min-w-0 mr-3">
@@ -435,12 +515,22 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
                           <span className="font-semibold text-slate-200 text-[12px] truncate">
                             {item.title}
                           </span>
+                          {isNative && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-800/60 shrink-0">
+                              내장 게임
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] text-slate-400 truncate">
-                          {item.vercelUrl ? (
+                          {isNative ? (
+                            <span className="text-emerald-400/90 font-medium inline-flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-emerald-400" />
+                              시나브로 내장 실행 (Vercel URL 불필요)
+                            </span>
+                          ) : item.vercelUrl ? (
                             <span className="text-slate-300 font-mono">{item.vercelUrl}</span>
                           ) : (
-                            <span className="text-amber-400 italic">Vercel URL 미등록 (설정 필요)</span>
+                            <span className="text-slate-500 italic">연결 URL 없음</span>
                           )}
                         </div>
                       </div>
