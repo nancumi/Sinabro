@@ -170,7 +170,13 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="관리자 설정 (카테고리 및 콘텐츠 관리)" maxWidth="max-w-2xl">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="관리자 설정 (카테고리 및 콘텐츠 관리)"
+      maxWidth="max-w-2xl"
+      topOffset="pt-8 md:pt-[150px] lg:pt-[200px]"
+    >
       <div className="space-y-4 text-[12px]">
         {/* 상단 탭 */}
         <div className="flex border-b border-slate-800 gap-2">
@@ -408,8 +414,8 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
               })}
             </div>
 
-            {/* 등록된 콘텐츠 목록 (5개씩 표시, 스크롤바 방지) */}
-            <div className="border border-slate-800 rounded-lg overflow-hidden divide-y divide-slate-800 bg-slate-900/40">
+            {/* 등록된 콘텐츠 목록 (3개씩 표시, 높이 고정으로 덜컹거림 방지) */}
+            <div className="border border-slate-800 rounded-lg overflow-hidden divide-y divide-slate-800 bg-slate-900/40 min-h-[162px]">
               {filteredContents.length === 0 ? (
                 <div className="p-4 text-center text-slate-500 text-[12px]">
                   {selectedFilterCatId === 'cat-all'
@@ -464,15 +470,15 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
             </div>
 
             {/* 페이지네이션 (5개 단위 블록, << < 1 2 3 4 5 > >>) */}
-            {totalPages > 1 && (
-              <div className="pt-1">
+            <div className="h-9 flex items-center justify-center pt-1">
+              {totalPages > 1 && (
                 <Pagination
                   currentPage={contentPage}
                   totalPages={totalPages}
                   onPageChange={setContentPage}
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>

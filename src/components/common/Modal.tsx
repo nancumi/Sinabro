@@ -9,6 +9,7 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   maxWidth?: string;
+  topOffset?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -17,6 +18,7 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   children,
   maxWidth = 'max-w-md',
+  topOffset = 'pt-8 md:pt-[150px] lg:pt-[200px]',
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -34,7 +36,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px] p-4 cursor-default select-none"
+      className={`fixed inset-0 z-50 flex justify-center bg-black/70 backdrop-blur-[2px] p-4 cursor-default select-none overflow-y-auto items-start ${topOffset}`}
       onClick={onClose}
     >
       <div
