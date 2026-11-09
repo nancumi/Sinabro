@@ -175,7 +175,7 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
       onClose={onClose}
       title="관리자 설정 (카테고리 및 콘텐츠 관리)"
       maxWidth="max-w-2xl"
-      topOffset="pt-8 md:pt-[150px] lg:pt-[200px]"
+      topOffset="pt-6 md:pt-[80px] lg:pt-[100px]"
     >
       <div className="space-y-4 text-[12px]">
         {/* 상단 탭 */}

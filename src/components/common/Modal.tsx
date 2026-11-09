@@ -18,7 +18,7 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   children,
   maxWidth = 'max-w-md',
-  topOffset = 'pt-8 md:pt-[150px] lg:pt-[200px]',
+  topOffset = 'pt-6 md:pt-[80px] lg:pt-[100px]',
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
