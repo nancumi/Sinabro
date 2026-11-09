@@ -232,7 +232,13 @@ export default function App() {
 
       {/* 4. 하단 간결한 팁 안내 */}
       <div className="mt-3 text-center text-[11px] text-slate-400">
-        💡 원하는 점을 터치한 후, 손가락을 떼지 않고 선을 따라 드래그하세요!
+        {stageData.oddNodes?.length === 2 ? (
+          <span>
+            💡 <span className="text-amber-300 font-semibold">주황색 테두리 점</span>에서 출발해야 한 번에 완성할 수 있습니다!
+          </span>
+        ) : (
+          <span>💡 원하는 점을 터치한 후, 손가락을 떼지 않고 선을 따라 드래그하세요!</span>
+        )}
       </div>
     </div>
   );
