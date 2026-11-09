@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   BarChart3,
   Users,
@@ -14,15 +14,27 @@ import {
   X,
   Award,
   TrendingUp,
-  Sparkles,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { DailyAnalytics, ContentAnalytics } from '@/types';
-import { fetchDailyAnalytics, fetchRecentAnalytics, getTodayString } from '@/utils/analytics';
+import {
+  fetchDateRangeAnalytics,
+  getTodayString,
+  formatDateToYMD,
+} from '@/utils/analytics';
 
 interface AnalyticsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+type PresetType = 'today' | 'yesterday' | '7days' | 'thisMonth' | 'lastMonth' | '30days' | '90days' | 'custom';
+type SortField = 'rank' | 'title' | 'uv' | 'pv' | 'avgDwell' | 'totalDwell';
+type SortDirection = 'asc' | 'desc';
 
 // 초 단위를 'X시간 Y분 Z초' 또는 'M분 S초'로 포맷팅
 const formatSeconds = (sec: number): string => {
@@ -40,113 +52,212 @@ const formatSeconds = (sec: number): string => {
   return `${seconds}초`;
 };
 
+// 프리셋 날짜 계산 헬퍼
+const getPresetDates = (preset: PresetType): { start: string; end: string } => {
+  const now = new Date();
+  const todayStr = formatDateToYMD(now);
+
+  switch (preset) {
+    case 'today':
+      return { start: todayStr, end: todayStr };
+    case 'yesterday': {
+      const y = new Date();
+      y.setDate(y.getDate() - 1);
+      const yStr = formatDateToYMD(y);
+      return { start: yStr, end: yStr };
+    }
+    case '7days': {
+      const d7 = new Date();
+      d7.setDate(d7.getDate() - 6);
+      return { start: formatDateToYMD(d7), end: todayStr };
+    }
+    case 'thisMonth': {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { start: formatDateToYMD(firstDay), end: todayStr };
+    }
+    case 'lastMonth': {
+      const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { start: formatDateToYMD(firstDayLastMonth), end: formatDateToYMD(lastDayLastMonth) };
+    }
+    case '30days': {
+      const d30 = new Date();
+      d30.setDate(d30.getDate() - 29);
+      return { start: formatDateToYMD(d30), end: todayStr };
+    }
+    case '90days': {
+      const d90 = new Date();
+      d90.setDate(d90.getDate() - 89);
+      return { start: formatDateToYMD(d90), end: todayStr };
+    }
+    default:
+      return { start: todayStr, end: todayStr };
+  }
+};
+
 export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose }) => {
-  const [selectedRange, setSelectedRange] = useState<'today' | 'yesterday' | '7days' | 'custom'>('today');
-  const [customDate, setCustomDate] = useState<string>('');
-  const [todayStr, setTodayStr] = useState<string>('');
-  const [yesterdayStr, setYesterdayStr] = useState<string>('');
+  const [activePreset, setActivePreset] = useState<PresetType>('today');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [analyticsData, setAnalyticsData] = useState<DailyAnalytics | null>(null);
-  const [aggregatedContents, setAggregatedContents] = useState<ContentAnalytics[]>([]);
+  const [allContents, setAllContents] = useState<ContentAnalytics[]>([]);
+
+  // 표 정렬 및 페이지네이션 상태
+  const [sortField, setSortField] = useState<SortField>('pv');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const PAGE_SIZE = 5;
 
   // 클라이언트 마운트 시 날짜 초기화 (Next.js SSG 프리렌더링 안정성 확보)
   useEffect(() => {
     const today = getTodayString();
-    setCustomDate(today);
-    setTodayStr(today);
-    setYesterdayStr(getTodayString(-1));
+    setStartDate(today);
+    setEndDate(today);
   }, []);
 
-  const loadData = async () => {
+  // 프리셋 버튼 클릭 핸들러
+  const handleSelectPreset = (preset: PresetType) => {
+    setActivePreset(preset);
+    const { start, end } = getPresetDates(preset);
+    setStartDate(start);
+    setEndDate(end);
+    loadData(start, end);
+  };
+
+  // 데이터 로드
+  const loadData = async (start: string, end: string) => {
+    if (!start || !end) return;
     setIsLoading(true);
+    setCurrentPage(1);
+
     try {
-      if (selectedRange === 'today') {
-        const today = getTodayString();
-        const data = await fetchDailyAnalytics(today);
-        setAnalyticsData(data);
-        extractContents(data);
-      } else if (selectedRange === 'yesterday') {
-        const yesterday = getTodayString(-1);
-        const data = await fetchDailyAnalytics(yesterday);
-        setAnalyticsData(data);
-        extractContents(data);
-      } else if (selectedRange === 'custom') {
-        const target = customDate || getTodayString();
-        const data = await fetchDailyAnalytics(target);
-        setAnalyticsData(data);
-        extractContents(data);
-      } else if (selectedRange === '7days') {
-        const list = await fetchRecentAnalytics(7);
-        // 7일치 종합 합산
-        const combined: DailyAnalytics = {
-          date: `최근 7일 종합 (${getTodayString(-6)} ~ ${getTodayString()})`,
-          totalPv: list.reduce((acc, cur) => acc + (cur.totalPv || 0), 0),
-          totalUv: list.reduce((acc, cur) => acc + (cur.totalUv || 0), 0),
-          deviceStats: {
-            mobile: list.reduce((acc, cur) => acc + (cur.deviceStats?.mobile || 0), 0),
-            desktop: list.reduce((acc, cur) => acc + (cur.deviceStats?.desktop || 0), 0),
-            tablet: list.reduce((acc, cur) => acc + (cur.deviceStats?.tablet || 0), 0),
-          },
-          hourlyPv: {},
-          contents: {},
-          updatedAt: Date.now(),
-        };
+      const list = await fetchDateRangeAnalytics(start, end);
 
-        // 시간대별 합산
-        for (let h = 0; h < 24; h++) {
-          const hourKey = String(h);
-          combined.hourlyPv![hourKey] = list.reduce(
-            (acc, cur) => acc + (cur.hourlyPv?.[hourKey] || 0),
-            0
-          );
-        }
-
-        // 콘텐츠별 합산
-        const mergedContents: Record<string, ContentAnalytics> = {};
-        list.forEach((day) => {
-          if (day.contents) {
-            Object.values(day.contents).forEach((c) => {
-              if (!mergedContents[c.id]) {
-                mergedContents[c.id] = {
-                  id: c.id,
-                  title: c.title,
-                  pv: c.pv || 0,
-                  uv: c.uv || 0,
-                  totalDwellSeconds: c.totalDwellSeconds || 0,
-                };
-              } else {
-                mergedContents[c.id].pv += c.pv || 0;
-                mergedContents[c.id].uv += c.uv || 0;
-                mergedContents[c.id].totalDwellSeconds += c.totalDwellSeconds || 0;
-              }
-            });
-          }
-        });
-        combined.contents = mergedContents;
-        setAnalyticsData(combined);
-        extractContents(combined);
+      if (list.length === 0) {
+        setAnalyticsData(null);
+        setAllContents([]);
+        return;
       }
+
+      // 복수일자 종합 합산
+      const combined: DailyAnalytics = {
+        date: start === end ? start : `${start} ~ ${end}`,
+        totalPv: list.reduce((acc, cur) => acc + (cur.totalPv || 0), 0),
+        totalUv: list.reduce((acc, cur) => acc + (cur.totalUv || 0), 0),
+        deviceStats: {
+          mobile: list.reduce((acc, cur) => acc + (cur.deviceStats?.mobile || 0), 0),
+          desktop: list.reduce((acc, cur) => acc + (cur.deviceStats?.desktop || 0), 0),
+          tablet: list.reduce((acc, cur) => acc + (cur.deviceStats?.tablet || 0), 0),
+        },
+        hourlyPv: {},
+        contents: {},
+        updatedAt: Date.now(),
+      };
+
+      // 시간대별 합산
+      for (let h = 0; h < 24; h++) {
+        const hourKey = String(h);
+        combined.hourlyPv![hourKey] = list.reduce(
+          (acc, cur) => acc + (cur.hourlyPv?.[hourKey] || 0),
+          0
+        );
+      }
+
+      // 콘텐츠별 합산
+      const mergedContents: Record<string, ContentAnalytics> = {};
+      list.forEach((day) => {
+        if (day.contents) {
+          Object.values(day.contents).forEach((c) => {
+            if (!mergedContents[c.id]) {
+              mergedContents[c.id] = {
+                id: c.id,
+                title: c.title,
+                pv: c.pv || 0,
+                uv: c.uv || 0,
+                totalDwellSeconds: c.totalDwellSeconds || 0,
+              };
+            } else {
+              mergedContents[c.id].pv += c.pv || 0;
+              mergedContents[c.id].uv += c.uv || 0;
+              mergedContents[c.id].totalDwellSeconds += c.totalDwellSeconds || 0;
+            }
+          });
+        }
+      });
+
+      combined.contents = mergedContents;
+      setAnalyticsData(combined);
+      setAllContents(Object.values(mergedContents));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const extractContents = (data: DailyAnalytics | null) => {
-    if (!data?.contents) {
-      setAggregatedContents([]);
-      return;
-    }
-    const list = Object.values(data.contents);
-    // PV 순으로 기본 내림차순 정렬 (인기순)
-    list.sort((a, b) => (b.pv || 0) - (a.pv || 0));
-    setAggregatedContents(list);
-  };
-
   useEffect(() => {
     if (isOpen) {
-      loadData();
+      const today = getTodayString();
+      const start = startDate || today;
+      const end = endDate || today;
+      loadData(start, end);
     }
-  }, [isOpen, selectedRange, customDate]);
+  }, [isOpen]);
+
+  // 표 정렬 핸들러
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+    setCurrentPage(1);
+  };
+
+  // 정렬된 콘텐츠 목록 계산
+  const sortedContents = useMemo(() => {
+    const list = [...allContents];
+    list.sort((a, b) => {
+      let valA: number | string = 0;
+      let valB: number | string = 0;
+
+      switch (sortField) {
+        case 'title':
+          valA = a.title;
+          valB = b.title;
+          return sortDirection === 'asc'
+            ? String(valA).localeCompare(String(valB))
+            : String(valB).localeCompare(String(valA));
+        case 'uv':
+          valA = a.uv || 0;
+          valB = b.uv || 0;
+          break;
+        case 'avgDwell':
+          valA = a.pv > 0 ? (a.totalDwellSeconds || 0) / a.pv : 0;
+          valB = b.pv > 0 ? (b.totalDwellSeconds || 0) / b.pv : 0;
+          break;
+        case 'totalDwell':
+          valA = a.totalDwellSeconds || 0;
+          valB = b.totalDwellSeconds || 0;
+          break;
+        case 'pv':
+        default:
+          valA = a.pv || 0;
+          valB = b.pv || 0;
+          break;
+      }
+
+      return sortDirection === 'asc' ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
+    });
+    return list;
+  }, [allContents, sortField, sortDirection]);
+
+  // 페이지네이션 슬라이스
+  const totalPages = Math.max(1, Math.ceil(sortedContents.length / PAGE_SIZE));
+  const paginatedContents = useMemo(() => {
+    const startIdx = (currentPage - 1) * PAGE_SIZE;
+    return sortedContents.slice(startIdx, startIdx + PAGE_SIZE);
+  }, [sortedContents, currentPage]);
 
   if (!isOpen) return null;
 
@@ -155,7 +266,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
   const pvPerUv = totalUv > 0 ? (totalPv / totalUv).toFixed(1) : '0';
 
   // 총 체류 시간 및 평균 체류 시간 계산
-  const totalDwellAll = aggregatedContents.reduce((acc, c) => acc + (c.totalDwellSeconds || 0), 0);
+  const totalDwellAll = allContents.reduce((acc, c) => acc + (c.totalDwellSeconds || 0), 0);
   const avgDwellAll = totalPv > 0 ? Math.round(totalDwellAll / totalPv) : 0;
 
   // 디바이스 비율
@@ -173,24 +284,33 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
     1
   );
 
+  // 정렬 아이콘 렌더러
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-3 h-3 text-slate-500 opacity-60 ml-1 inline-block" />;
+    }
+    return sortDirection === 'asc' ? (
+      <ArrowUp className="w-3 h-3 text-purple-400 ml-1 inline-block" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-purple-400 ml-1 inline-block" />
+    );
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md">
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[50px] pb-10 px-3 sm:px-6 bg-black/80 backdrop-blur-md overflow-y-auto select-none">
+      <div className="relative w-full max-w-6xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100 mb-10">
         {/* 1. 모달 헤더 */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-950/50">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-950/60">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30">
               <BarChart3 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2">
-                <span>실시간 방문자 접속 통계 & 종합 분석</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  Firebase 실시간
-                </span>
+              <h2 className="text-base sm:text-lg font-black tracking-tight text-white">
+                실시간 방문자 접속 통계 & 종합 분석
               </h2>
               <p className="text-xs text-slate-400">
-                일 단위 접속자, 페이지별 순수/중복 방문 및 체류 시간을 종합 정리합니다.
+                일 단위 전체 접속자 수, 페이지별 순수/중복 방문 및 체류 시간을 종합 정리합니다.
               </p>
             </div>
           </div>
@@ -204,71 +324,130 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
           </button>
         </div>
 
-        {/* 2. 날짜 필터 바 & 새로고침 */}
-        <div className="flex flex-wrap items-center justify-between gap-2 p-3 sm:px-5 bg-slate-950/80 border-b border-slate-800/80 text-xs">
-          <div className="flex items-center gap-1.5 flex-wrap">
+        {/* 2. 날짜 필터 툴바 (단일 행 가로 확장 + 시작일/종료일 선택) */}
+        <div className="flex items-center justify-between gap-3 p-3 sm:px-5 bg-slate-950/90 border-b border-slate-800/80 text-xs overflow-x-auto no-scrollbar whitespace-nowrap">
+          {/* 7가지 프리셋 버튼 (텍스트만 깔끔하게 단일 행 유지) */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
-              onClick={() => setSelectedRange('today')}
+              onClick={() => handleSelectPreset('today')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                selectedRange === 'today'
+                activePreset === 'today'
                   ? 'bg-purple-600 text-white shadow-sm'
                   : 'bg-slate-800 text-slate-400 hover:text-slate-200'
               }`}
             >
-              오늘 {todayStr ? `(${todayStr})` : ''}
+              오늘
             </button>
             <button
               type="button"
-              onClick={() => setSelectedRange('yesterday')}
+              onClick={() => handleSelectPreset('yesterday')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                selectedRange === 'yesterday'
+                activePreset === 'yesterday'
                   ? 'bg-purple-600 text-white shadow-sm'
                   : 'bg-slate-800 text-slate-400 hover:text-slate-200'
               }`}
             >
-              어제 {yesterdayStr ? `(${yesterdayStr})` : ''}
+              어제
             </button>
             <button
               type="button"
-              onClick={() => setSelectedRange('7days')}
+              onClick={() => handleSelectPreset('7days')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                selectedRange === '7days'
+                activePreset === '7days'
                   ? 'bg-purple-600 text-white shadow-sm'
                   : 'bg-slate-800 text-slate-400 hover:text-slate-200'
               }`}
             >
-              최근 7일 종합
+              최근 7일
             </button>
-            <div className="flex items-center gap-1 bg-slate-800/80 rounded-lg px-2 py-1 border border-slate-700">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <button
+              type="button"
+              onClick={() => handleSelectPreset('thisMonth')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                activePreset === 'thisMonth'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              이번 달
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectPreset('lastMonth')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                activePreset === 'lastMonth'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              지난 달
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectPreset('30days')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                activePreset === '30days'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              최근 30일
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectPreset('90days')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                activePreset === '90days'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              최근 90일
+            </button>
+          </div>
+
+          {/* 시작일 ~ 종료일 선택 및 조회 버튼 */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 bg-slate-800/90 rounded-lg px-2.5 py-1 border border-slate-700">
+              <Calendar className="w-3.5 h-3.5 text-purple-400" />
               <input
                 type="date"
-                value={customDate}
+                value={startDate}
                 onChange={(e) => {
-                  setCustomDate(e.target.value);
-                  setSelectedRange('custom');
+                  setStartDate(e.target.value);
+                  setActivePreset('custom');
+                }}
+                className="bg-transparent text-slate-200 text-xs focus:outline-none cursor-pointer"
+              />
+              <span className="text-slate-500">~</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setActivePreset('custom');
                 }}
                 className="bg-transparent text-slate-200 text-xs focus:outline-none cursor-pointer"
               />
             </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={loadData}
-            disabled={isLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700 transition-colors cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-purple-400' : ''}`} />
-            <span>새로고침</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => loadData(startDate, endDate)}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white font-semibold transition-colors cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>조회</span>
+            </button>
+          </div>
         </div>
 
-        {/* 3. 모달 스크롤 본문 */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-6">
+        {/* 3. 모달 본문 */}
+        <div className="p-4 sm:p-6 space-y-6">
           {/* A. 핵심 지표 요약 4대 카드 */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
             {/* 1. 전체 순수 접속자 수 (UV) */}
             <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between">
               <div className="flex items-center justify-between text-slate-400 mb-2">
@@ -323,95 +502,197 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
             </div>
           </div>
 
-          {/* B. 페이지(콘텐츠)별 순수/중복 접속자 및 머문 시간 종합 분석 (인기 순위) */}
+          {/* B. 페이지(콘텐츠)별 인기 순위 및 머문 시간 상세 (5위 페이징 + 좌우 정렬 메달 + 필드 정렬) */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-yellow-400" />
                 <h3 className="text-sm font-bold text-slate-200">
-                  페이지(콘텐츠)별 인기 순위 및 머문 시간 상세
+                  페이지(콘텐츠)별 인기 순위 및 머문 시간
                 </h3>
               </div>
               <span className="text-xs text-slate-400">
-                조회수(PV) 많은 순 정렬 • 총 {aggregatedContents.length}개 콘텐츠
+                총 {allContents.length}개 콘텐츠 (페이지당 5개 표시)
               </span>
             </div>
 
-            {aggregatedContents.length === 0 ? (
+            {allContents.length === 0 ? (
               <div className="p-8 text-center text-slate-500 text-xs bg-slate-950/40 border border-slate-800/80 rounded-xl">
-                선택한 일자에 기록된 콘텐츠 접속 데이터가 아직 없습니다.
+                선택한 기간({startDate} ~ {endDate})에 기록된 콘텐츠 접속 데이터가 없습니다.
               </div>
             ) : (
-              <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800 font-bold">
-                    <tr>
-                      <th className="py-3 px-4 w-14 text-center">순위</th>
-                      <th className="py-3 px-4">콘텐츠(게임) 이름</th>
-                      <th className="py-3 px-4 text-right">순수 접속 (UV)</th>
-                      <th className="py-3 px-4 text-right">중복 방문 (PV)</th>
-                      <th className="py-3 px-4 text-right">평균 머문 시간</th>
-                      <th className="py-3 px-4 text-right">총 체류 시간</th>
-                      <th className="py-3 px-4 w-28 text-center">인기 비중</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {aggregatedContents.map((content, idx) => {
-                      const maxPv = aggregatedContents[0]?.pv || 1;
-                      const ratioPct = Math.round(((content.pv || 0) / maxPv) * 100);
-                      const avgTime =
-                        content.pv > 0
-                          ? Math.round((content.totalDwellSeconds || 0) / content.pv)
-                          : 0;
-
-                      let medalBadge = <span className="text-slate-400 font-bold">{idx + 1}</span>;
-                      if (idx === 0) medalBadge = <span className="text-yellow-400 font-black text-sm">🥇 1</span>;
-                      if (idx === 1) medalBadge = <span className="text-slate-300 font-black text-sm">🥈 2</span>;
-                      if (idx === 2) medalBadge = <span className="text-amber-600 font-black text-sm">🥉 3</span>;
-
-                      return (
-                        <tr
-                          key={content.id}
-                          className="hover:bg-slate-800/40 transition-colors"
+              <div className="border border-slate-800 rounded-xl bg-slate-950/40 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800 font-bold select-none">
+                      <tr>
+                        <th className="py-3 px-4 w-20 text-center whitespace-nowrap">순위</th>
+                        <th
+                          onClick={() => handleSort('title')}
+                          className="py-3 px-4 cursor-pointer hover:text-white transition-colors whitespace-nowrap"
                         >
-                          <td className="py-3 px-4 text-center">{medalBadge}</td>
-                          <td className="py-3 px-4">
-                            <span className="font-bold text-slate-200">{content.title}</span>
-                          </td>
-                          <td className="py-3 px-4 text-right font-semibold text-cyan-400">
-                            {(content.uv || 0).toLocaleString()}명
-                          </td>
-                          <td className="py-3 px-4 text-right font-bold text-purple-300">
-                            {(content.pv || 0).toLocaleString()}회
-                          </td>
-                          <td className="py-3 px-4 text-right text-amber-300">
-                            {formatSeconds(avgTime)}
-                          </td>
-                          <td className="py-3 px-4 text-right text-slate-400">
-                            {formatSeconds(content.totalDwellSeconds || 0)}
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                              <div
-                                className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full"
-                                style={{ width: `${ratioPct}%` }}
-                                title={`${ratioPct}%`}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                          콘텐츠(게임) 이름 {renderSortIcon('title')}
+                        </th>
+                        <th
+                          onClick={() => handleSort('uv')}
+                          className="py-3 px-4 text-right cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                        >
+                          순수 접속 (UV) {renderSortIcon('uv')}
+                        </th>
+                        <th
+                          onClick={() => handleSort('pv')}
+                          className="py-3 px-4 text-right cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                        >
+                          중복 방문 (PV) {renderSortIcon('pv')}
+                        </th>
+                        <th
+                          onClick={() => handleSort('avgDwell')}
+                          className="py-3 px-4 text-right cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                        >
+                          평균 머문 시간 {renderSortIcon('avgDwell')}
+                        </th>
+                        <th
+                          onClick={() => handleSort('totalDwell')}
+                          className="py-3 px-4 text-right cursor-pointer hover:text-white transition-colors whitespace-nowrap"
+                        >
+                          총 체류 시간 {renderSortIcon('totalDwell')}
+                        </th>
+                        <th className="py-3 px-4 w-32 text-center whitespace-nowrap">인기 비중</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {paginatedContents.map((content, idx) => {
+                        const actualRank = (currentPage - 1) * PAGE_SIZE + idx + 1;
+                        const maxPv = sortedContents[0]?.pv || 1;
+                        const ratioPct = Math.round(((content.pv || 0) / maxPv) * 100);
+                        const avgTime =
+                          content.pv > 0
+                            ? Math.round((content.totalDwellSeconds || 0) / content.pv)
+                            : 0;
+
+                        // 메달과 등수를 가로(좌우)로 나란히 표시
+                        let medalBadge = (
+                          <span className="inline-flex items-center gap-1 justify-center font-bold text-slate-400">
+                            {actualRank}위
+                          </span>
+                        );
+                        if (actualRank === 1) {
+                          medalBadge = (
+                            <span className="inline-flex items-center gap-1.5 justify-center font-black text-yellow-400">
+                              <span>🥇</span>
+                              <span>1위</span>
+                            </span>
+                          );
+                        } else if (actualRank === 2) {
+                          medalBadge = (
+                            <span className="inline-flex items-center gap-1.5 justify-center font-black text-slate-300">
+                              <span>🥈</span>
+                              <span>2위</span>
+                            </span>
+                          );
+                        } else if (actualRank === 3) {
+                          medalBadge = (
+                            <span className="inline-flex items-center gap-1.5 justify-center font-black text-amber-600">
+                              <span>🥉</span>
+                              <span>3위</span>
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <tr
+                            key={content.id}
+                            className="hover:bg-slate-800/40 transition-colors"
+                          >
+                            <td className="py-3 px-4 text-center whitespace-nowrap">{medalBadge}</td>
+                            <td className="py-3 px-4">
+                              <span className="font-bold text-slate-200">{content.title}</span>
+                            </td>
+                            <td className="py-3 px-4 text-right font-semibold text-cyan-400 whitespace-nowrap">
+                              {(content.uv || 0).toLocaleString()}명
+                            </td>
+                            <td className="py-3 px-4 text-right font-bold text-purple-300 whitespace-nowrap">
+                              {(content.pv || 0).toLocaleString()}회
+                            </td>
+                            <td className="py-3 px-4 text-right text-amber-300 whitespace-nowrap">
+                              {formatSeconds(avgTime)}
+                            </td>
+                            <td className="py-3 px-4 text-right text-slate-400 whitespace-nowrap">
+                              {formatSeconds(content.totalDwellSeconds || 0)}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                                <div
+                                  className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full"
+                                  style={{ width: `${ratioPct}%` }}
+                                  title={`${ratioPct}%`}
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 5위 이상 페이지네이션 컨트롤 */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-slate-800 bg-slate-950/70 text-xs">
+                    <span className="text-slate-400">
+                      총 {allContents.length}개 중 {(currentPage - 1) * PAGE_SIZE + 1} -{' '}
+                      {Math.min(currentPage * PAGE_SIZE, allContents.length)}개 표시
+                    </span>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        title="이전 페이지"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+
+                      {Array.from({ length: totalPages }).map((_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              currentPage === pageNum
+                                ? 'bg-purple-600 text-white shadow-sm'
+                                : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        title="다음 페이지"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* C. 24시간 시간대별 유입 차트 & 디바이스 비율 */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* 1. 시간대별 접속 분포 차트 */}
-            <div className="lg:col-span-2 p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
+          {/* C. 24시간 시간대별 유입 차트 & 여유 있는 디바이스 접속 분포 */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* 1. 시간대별 접속 분포 차트 (7컬럼) */}
+            <div className="lg:col-span-7 p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                   <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
@@ -419,7 +700,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                 </span>
                 <span className="text-[11px] text-slate-500">피크 시간대 분석</span>
               </div>
-              <div className="h-28 flex items-end gap-1 pt-4 px-1 border-b border-slate-800">
+              <div className="h-32 flex items-end gap-1 pt-4 px-1 border-b border-slate-800">
                 {Array.from({ length: 24 }).map((_, h) => {
                   const hourCount = analyticsData?.hourlyPv?.[String(h)] || 0;
                   const heightPct = Math.max(4, Math.round((hourCount / maxHourlyPv) * 100));
@@ -454,86 +735,78 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
               </div>
             </div>
 
-            {/* 2. 접속 기기(디바이스) 분포 */}
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3 flex flex-col justify-between">
+            {/* 2. 접속 기기(디바이스) 분포 (5컬럼 - 여유 있고 쾌적한 레이아웃) */}
+            <div className="lg:col-span-5 p-5 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between space-y-4">
               <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <Smartphone className="w-3.5 h-3.5 text-pink-400" />
                 기기별 접속 분포
               </span>
 
-              <div className="space-y-2.5">
+              <div className="space-y-4 py-1">
                 {/* 모바일 */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400 flex items-center gap-1">
-                      <Smartphone className="w-3 h-3 text-emerald-400" /> 모바일
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-300 flex items-center gap-1.5 font-medium">
+                      <Smartphone className="w-3.5 h-3.5 text-emerald-400" /> 모바일
                     </span>
-                    <span className="font-bold text-slate-200">
-                      {mobileCount}명 ({mobilePct}%)
+                    <span className="font-bold text-slate-100">
+                      {mobileCount}명 <span className="text-emerald-400 ml-1 font-black">({mobilePct}%)</span>
                     </span>
                   </div>
-                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
                     <div
-                      className="bg-emerald-400 h-full rounded-full"
+                      className="bg-emerald-400 h-full rounded-full transition-all duration-500"
                       style={{ width: `${mobilePct}%` }}
                     />
                   </div>
                 </div>
 
                 {/* PC 데스크탑 */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400 flex items-center gap-1">
-                      <Monitor className="w-3 h-3 text-cyan-400" /> 데스크탑 (PC)
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-300 flex items-center gap-1.5 font-medium">
+                      <Monitor className="w-3.5 h-3.5 text-cyan-400" /> 데스크탑 (PC)
                     </span>
-                    <span className="font-bold text-slate-200">
-                      {desktopCount}명 ({desktopPct}%)
+                    <span className="font-bold text-slate-100">
+                      {desktopCount}명 <span className="text-cyan-400 ml-1 font-black">({desktopPct}%)</span>
                     </span>
                   </div>
-                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
                     <div
-                      className="bg-cyan-400 h-full rounded-full"
+                      className="bg-cyan-400 h-full rounded-full transition-all duration-500"
                       style={{ width: `${desktopPct}%` }}
                     />
                   </div>
                 </div>
 
                 {/* 태블릿 */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400 flex items-center gap-1">
-                      <Tablet className="w-3 h-3 text-purple-400" /> 태블릿
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-300 flex items-center gap-1.5 font-medium">
+                      <Tablet className="w-3.5 h-3.5 text-purple-400" /> 태블릿
                     </span>
-                    <span className="font-bold text-slate-200">
-                      {tabletCount}명 ({tabletPct}%)
+                    <span className="font-bold text-slate-100">
+                      {tabletCount}명 <span className="text-purple-400 ml-1 font-black">({tabletPct}%)</span>
                     </span>
                   </div>
-                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
                     <div
-                      className="bg-purple-400 h-full rounded-full"
+                      className="bg-purple-400 h-full rounded-full transition-all duration-500"
                       style={{ width: `${tabletPct}%` }}
                     />
                   </div>
                 </div>
-              </div>
-
-              <div className="text-[11px] text-slate-500 pt-2 border-t border-slate-800 text-center">
-                전체 {deviceTotal.toLocaleString()}건의 기기 환경 식별
               </div>
             </div>
           </div>
         </div>
 
         {/* 4. 모달 푸터 */}
-        <div className="flex items-center justify-between p-4 border-t border-slate-800 bg-slate-950/80">
-          <div className="text-[11px] text-slate-500 flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-purple-400" />
-            <span>데이터는 사용자 브라우저 접속 및 종료 시점에 파이어베이스와 자동 동기화됩니다.</span>
-          </div>
+        <div className="flex items-center justify-end p-4 border-t border-slate-800 bg-slate-950/80">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer"
+            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer"
           >
             닫기
           </button>

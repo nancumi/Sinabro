@@ -18,6 +18,14 @@ export const getTodayString = (offsetDays: number = 0): string => {
   return `${year}-${month}-${day}`;
 };
 
+// 특정 Date 객체를 'YYYY-MM-DD'로 변환
+export const formatDateToYMD = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // 고유 방문자 ID 가져오기 (없으면 자동 생성)
 export const getOrCreateVisitorId = (): string => {
   if (typeof window === 'undefined') return 'server';
@@ -56,9 +64,8 @@ export const trackSiteVisit = async (): Promise<void> => {
       localStorage.setItem(LAST_UV_DATE_KEY, today);
     }
 
-    // 세션별 중복 방문(PV) 기록 (새로고침 또는 재방문 시 PV 카운트)
+    // 세션별 중복 방문(PV) 기록
     const sessionKey = `sinabro_pv_${today}`;
-    const hasVisitedSession = sessionStorage.getItem(sessionKey);
     sessionStorage.setItem(sessionKey, '1');
 
     const device = detectDeviceType();
@@ -174,21 +181,26 @@ export const fetchDailyAnalytics = async (dateStr: string): Promise<DailyAnalyti
 };
 
 /**
- * 5. 최근 N일간의 통계 데이터 조회 (종합 집계용)
+ * 5. 시작일~종료일 기간별 통계 데이터 조회 (범위 조회)
  */
-export const fetchRecentAnalytics = async (days: number = 7): Promise<DailyAnalytics[]> => {
+export const fetchDateRangeAnalytics = async (
+  startDate: string,
+  endDate: string
+): Promise<DailyAnalytics[]> => {
   try {
-    const dateList: string[] = [];
-    for (let i = 0; i < days; i++) {
-      dateList.push(getTodayString(-i));
-    }
-
-    const promises = dateList.map((dateStr) => fetchDailyAnalytics(dateStr));
-    const results = await Promise.all(promises);
-
-    return results.filter((r): r is DailyAnalytics => r !== null);
+    const q = query(
+      collection(db, ANALYTICS_COLLECTION),
+      where('date', '>=', startDate),
+      where('date', '<=', endDate)
+    );
+    const snap = await getDocs(q);
+    const list: DailyAnalytics[] = [];
+    snap.forEach((d) => {
+      list.push(d.data() as DailyAnalytics);
+    });
+    return list;
   } catch (err) {
-    console.error('Failed to fetch recent analytics:', err);
+    console.error(`Failed to fetch date range analytics (${startDate} ~ ${endDate}):`, err);
     return [];
   }
 };

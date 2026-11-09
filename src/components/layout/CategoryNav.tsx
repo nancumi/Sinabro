@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Category, ContentItem } from '@/types';
-import { Plus, ChevronDown, ChevronUp, Play } from 'lucide-react';
+import { Plus, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface CategoryNavProps {
   categories: Category[];
@@ -26,6 +26,36 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
   onOpenAdmin,
 }) => {
   const [openSubmenuCatId, setOpenSubmenuCatId] = useState<string | null>(null);
+
+  // 마우스 드래그 / 스와이프 스크롤 핸들링
+  const submenuRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [dragMoved, setDragMoved] = useState(false);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!submenuRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - submenuRef.current.offsetLeft);
+    setScrollLeft(submenuRef.current.scrollLeft);
+    setDragMoved(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !submenuRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - submenuRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    if (Math.abs(walk) > 4) {
+      setDragMoved(true);
+    }
+    submenuRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    setIsDragging(false);
+  };
 
   const handleCategoryClick = (catId: string) => {
     onSelectCategory(catId);
@@ -54,17 +84,17 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
                 key={cat.id}
                 type="button"
                 onClick={() => handleCategoryClick(cat.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
-                  isSelected || isSubmenuOpen
-                    ? 'bg-blue-600 text-white border-blue-500 shadow-sm font-semibold'
-                    : 'bg-slate-800/80 text-slate-300 border-slate-700/80 hover:bg-slate-700 hover:text-white'
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[13px] font-semibold whitespace-nowrap transition-all border cursor-pointer ${
+                  isSelected
+                    ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/20'
+                    : 'bg-slate-800/80 text-slate-300 border-slate-700/60 hover:bg-slate-750 hover:text-white'
                 }`}
               >
                 <span>{cat.name}</span>
                 {isSubmenuOpen ? (
                   <ChevronUp className="w-3.5 h-3.5 text-blue-200" />
                 ) : (
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-white opacity-70" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 opacity-70" />
                 )}
               </button>
             );
@@ -87,12 +117,16 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
       {/* 2. 서브 메뉴 드롭다운 영역 (하위 광고 슬롯과 게임 화면을 자연스럽게 밑으로 밀어냄) */}
       {openSubmenuCatId && (
         <div className="w-full bg-slate-950/95 border-t border-slate-800/80 py-2.5 px-4 shadow-inner">
-          <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
-            <span className="text-[10px] text-sky-400 uppercase tracking-widest font-bold shrink-0 mr-1 flex items-center gap-1">
-              <Play className="w-2.5 h-2.5 fill-sky-400" />
-              게임 목록
-            </span>
-
+          <div
+            ref={submenuRef}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUpOrLeave}
+            onMouseLeave={handleMouseUpOrLeave}
+            className={`max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 select-none ${
+              isDragging ? 'cursor-grabbing' : 'cursor-grab'
+            }`}
+          >
             {submenuContents.length === 0 ? (
               <span className="text-[11px] text-slate-500 italic py-1">
                 등록된 콘텐츠가 없습니다.
@@ -105,7 +139,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
                     key={`submenu-item-${content.id}`}
                     type="button"
                     onClick={() => {
-                      if (onSelectContent) {
+                      if (!dragMoved && onSelectContent) {
                         onSelectContent(content);
                       }
                     }}
