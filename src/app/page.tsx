@@ -30,7 +30,7 @@ export default function HomePage() {
     topBannerEnabled: true,
     sideBannerEnabled: true,
     bottomBannerEnabled: true,
-    adsenseClientId: '',
+    adsenseClientId: 'ca-pub-4819204726523615',
     topSlotId: '',
     sideSlotId: '',
     bottomSlotId: '',
