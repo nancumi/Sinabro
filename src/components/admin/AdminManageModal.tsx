@@ -39,10 +39,10 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
   const [contentDesc, setContentDesc] = useState('');
   const [editingContentId, setEditingContentId] = useState<string | null>(null);
 
-  // 콘텐츠 목록 카테고리 필터 및 페이지네이션 (5개 단위)
+  // 콘텐츠 목록 카테고리 필터 및 페이지네이션 (3개 단위)
   const [selectedFilterCatId, setSelectedFilterCatId] = useState<string>('cat-all');
   const [contentPage, setContentPage] = useState<number>(1);
-  const ITEMS_PER_PAGE = 5;
+  const ITEMS_PER_PAGE = 3;
 
   const filteredContents = useMemo(() => {
     if (selectedFilterCatId === 'cat-all') {
@@ -475,16 +475,6 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
             )}
           </div>
         )}
-
-        <div className="flex justify-end pt-2 border-t border-slate-800">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-1.5 rounded-lg text-[12px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
-          >
-            닫기
-          </button>
-        </div>
       </div>
     </Modal>
   );
