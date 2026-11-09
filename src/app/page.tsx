@@ -53,8 +53,20 @@ export default function HomePage() {
     setContents(localContents);
     setAdConfig(localAds);
 
+    const findMatched = (items: ContentItem[]) => {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const titleQuery = params.get('title') || params.get('game');
+        if (titleQuery) {
+          const found = items.find((c) => c.title.toLowerCase().includes(titleQuery.toLowerCase()));
+          if (found) return found;
+        }
+      }
+      return items[0] || null;
+    };
+
     if (localContents.length > 0) {
-      setSelectedContent(localContents[0]);
+      setSelectedContent(findMatched(localContents));
     }
 
     // 2. Firestore 실시간 동기화 구독 (클라우드 DB에 데이터 있을 시 자동 갱신)
@@ -65,9 +77,9 @@ export default function HomePage() {
       if (data.contents) {
         setContents(data.contents);
         setSelectedContent((prev) => {
-          if (!prev) return data.contents[0] || null;
+          if (!prev) return findMatched(data.contents);
           const found = data.contents.find((c) => c.id === prev.id);
-          return found || data.contents[0] || null;
+          return found || findMatched(data.contents);
         });
       }
       if (data.adConfig) {
@@ -106,6 +118,16 @@ export default function HomePage() {
   const handleSaveAdConfig = async (newAdConfig: AdConfig) => {
     setAdConfig(newAdConfig);
     await saveAdConfig(newAdConfig);
+  };
+
+  // 콘텐츠 선택 시 URL 파라미터 자동 갱신 (?title=...)
+  const handleSelectContent = (item: ContentItem) => {
+    setSelectedContent(item);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('title', item.title);
+      window.history.replaceState(null, '', url.toString());
+    }
   };
 
   return (
@@ -150,7 +172,7 @@ export default function HomePage() {
                 categories={categories}
                 selectedCategoryId={selectedCategoryId}
                 selectedContentId={selectedContent?.id || null}
-                onSelectContent={setSelectedContent}
+                onSelectContent={handleSelectContent}
                 isAdmin={isAdmin}
                 onOpenAdmin={() => setIsAdminModalOpen(true)}
               />
@@ -164,7 +186,7 @@ export default function HomePage() {
               categories={categories}
               selectedCategoryId={selectedCategoryId}
               selectedContentId={selectedContent?.id || null}
-              onSelectContent={setSelectedContent}
+              onSelectContent={handleSelectContent}
               isAdmin={isAdmin}
               onOpenAdmin={() => setIsAdminModalOpen(true)}
             />
