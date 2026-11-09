@@ -120,7 +120,7 @@ export default function HomePage() {
     await saveAdConfig(newAdConfig);
   };
 
-  // 콘텐츠 선택 시 URL 파라미터 자동 갱신 (?title=...) 및 게임 화면으로 스크롤 이동
+  // 콘텐츠 선택 시 URL 파라미터 자동 갱신 (?title=...) 및 화면 최상단으로 스크롤 이동
   const handleSelectContent = (item: ContentItem) => {
     setSelectedContent(item);
     if (typeof window !== 'undefined') {
@@ -128,19 +128,9 @@ export default function HomePage() {
       url.searchParams.set('title', item.title);
       window.history.replaceState(null, '', url.toString());
 
-      // 모바일의 경우 화면 맨 위에서 50px만 스크롤하여 최적의 높이로 맞춤
+      // 모바일, PC 구분 없이 모두 화면 제일 상단(top: 0)으로 부드럽게 스크롤
       setTimeout(() => {
-        const isMobile = window.innerWidth < 1024;
-        if (isMobile) {
-          window.scrollTo({ top: 50, behavior: 'smooth' });
-        } else {
-          const viewer = document.getElementById('game-viewer-section');
-          if (viewer) {
-            viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } else {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 50);
     }
   };
