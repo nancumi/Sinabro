@@ -222,6 +222,13 @@ export const AdminManageModal: React.FC<AdminManageModalProps> = ({
                   ) : (
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-slate-200 text-[12px]">{cat.name}</span>
+                      <span className="text-[11px] font-medium text-sky-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700">
+                        (
+                        {cat.id === 'cat-all'
+                          ? contents.length
+                          : contents.filter((c) => c.categoryId === cat.id).length}
+                        )
+                      </span>
                       {cat.id === 'cat-all' && (
                         <span className="text-[11px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
                           기본
