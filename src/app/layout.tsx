@@ -4,23 +4,133 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ModalProvider } from '@/context/ModalContext';
 
 export const metadata: Metadata = {
-  title: 'WS With Sinabro - 스마트하게 즐기는 시간 때우기',
-  description: '다양한 미니게임과 유용한 콘텐츠를 시나브로 스마트하게 즐길 수 있는 공간입니다.',
+  title: 'With Sinabro (시나브로) - 설치 없는 무료 웹 미니게임 & 시간 때우기',
+  description:
+    '시간 맞추기, 룰렛 돌리기, 손가락 터치 룰렛, 사다리 타기, 두더지 팡팡, 2048, 슬라이딩 퍼즐, 반사신경 테스트, 한 붓 그리기, 동물 기억력, LED 전광판 등 앱 설치 없이 웹 브라우저에서 1초 만에 즐기는 11종 무료 미니게임 플랫폼!',
+  keywords: [
+    '미니게임',
+    '웹게임',
+    '무료게임',
+    '시간때우기',
+    '킬링타임',
+    '시간맞추기',
+    '타이머게임',
+    '손가락룰렛',
+    '손가락터치룰렛',
+    '룰렛돌리기',
+    '사다리타기',
+    '두더지팡팡',
+    '두더지잡기',
+    '2048',
+    '2048게임',
+    '슬라이딩퍼즐',
+    '반사신경테스트',
+    '한붓그리기',
+    '동물기억력',
+    'LED전광판',
+    '내기게임',
+    '술자리게임',
+    '시나브로',
+    'With Sinabro',
+  ],
   metadataBase: new URL('https://ws.ai.kr'),
-  alternates: {
-    canonical: 'https://ws.ai.kr',
+  openGraph: {
+    title: 'With Sinabro (시나브로) - 설치 없는 무료 웹 미니게임 & 시간 때우기',
+    description:
+      '설치 없이 브라우저로 바로 즐기는 11종의 무료 웹 미니게임! 밥값 내기, 커피 내기, 킬링타임에 딱 맞는 게임들을 만나보세요.',
+    url: 'https://ws.ai.kr',
+    siteName: 'With Sinabro',
+    locale: 'ko_KR',
+    type: 'website',
   },
   other: {
     'google-adsense-account': 'ca-pub-4819204726523615',
   },
-  openGraph: {
-    title: 'WS With Sinabro - 스마트하게 즐기는 시간 때우기',
-    description: '다양한 미니게임과 유용한 콘텐츠를 시나브로 스마트하게 즐길 수 있는 공간입니다.',
-    url: 'https://ws.ai.kr',
-    siteName: 'WS With Sinabro',
-    locale: 'ko_KR',
-    type: 'website',
+};
+
+// 검색 엔진(구글, 네이버)을 위한 11종 게임 구조화 데이터(JSON-LD)
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'With Sinabro (시나브로)',
+  url: 'https://ws.ai.kr',
+  applicationCategory: 'GameApplication',
+  operatingSystem: 'All',
+  description:
+    '시간 맞추기, 룰렛, 사다리, 2048, 슬라이딩 퍼즐, 반사신경, LED 전광판 등 11종의 무료 웹 미니게임을 제공하는 플랫폼',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'KRW',
   },
+  hasPart: [
+    {
+      '@type': 'WebApplication',
+      name: '시간 맞추기 (타이머 배틀)',
+      url: 'https://ws.ai.kr/?game=timer',
+      description: '3.00초 정밀 타이머를 감으로 가장 가깝게 맞추는 내기 미니게임',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '룰렛 돌리기',
+      url: 'https://ws.ai.kr/?game=roulette',
+      description: '점심 메뉴 고르기 및 벌칙 정하기를 위한 행운의 회전 룰렛 게임',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '손가락 터치 룰렛',
+      url: 'https://ws.ai.kr/?game=touch',
+      description: '스마트폰 화면에 여러 명이 손가락을 터치해 1명을 뽑는 술자리 복불복 게임',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '사다리 타기',
+      url: 'https://ws.ai.kr/?game=ladder',
+      description: '최대 12명까지 참여 가능한 직관적이고 공정한 클래식 사다리 타기 게임',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '두더지 팡팡',
+      url: 'https://ws.ai.kr/?game=mole',
+      description: '튀어나오는 두더지를 빠르게 터치해 잡는 순발력 아케이드 게임',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '2048 숫자 합치기',
+      url: 'https://ws.ai.kr/?game=2048',
+      description: '같은 숫자를 합쳐 2048 타일을 만드는 중독성 강한 두뇌 수학 퍼즐',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '슬라이딩 퍼즐 (1 to 15)',
+      url: 'https://ws.ai.kr/?game=puzzle',
+      description: '빈 칸을 이용해 1부터 15까지 순서대로 숫자를 맞추는 전통 슬라이딩 퍼즐',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '반사신경 테스트',
+      url: 'https://ws.ai.kr/?game=reflex',
+      description: '화면 색상이 바뀌는 순간의 반응속도를 밀리초(ms) 단위로 측정하는 동체시력 게임',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '한 붓 그리기',
+      url: 'https://ws.ai.kr/?game=stroke',
+      description: '모든 선을 떼지 않고 한 번에 연결하는 두뇌 트레이닝 퍼즐 게임',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '동물 기억력 릴레이',
+      url: 'https://ws.ai.kr/?game=animal',
+      description: '동물들이 나타난 순서를 기억해 똑같이 터치하는 기억력 집중력 게임',
+    },
+    {
+      '@type': 'WebApplication',
+      name: 'LED 전광판 만들기',
+      url: 'https://ws.ai.kr/?game=led',
+      description: '콘서트, 공항 마중, 응원용 네온 글씨가 흐르는 나만의 모바일 LED 전광판',
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -35,6 +145,11 @@ export default function RootLayout({
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4819204726523615"
           crossOrigin="anonymous"
+        />
+        {/* 구글 & 네이버 검색엔진 최적화를 위한 구조화 데이터 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
       <body className="bg-slate-950 text-slate-100 text-[12px] antialiased min-h-screen">
