@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ContentItem } from '@/types';
-import { Settings, Sparkles, Plus, Play, Gamepad2 } from 'lucide-react';
+import { Settings, Sparkles, Plus, Play, Gamepad2, RefreshCw } from 'lucide-react';
 import { GAME_REGISTRY, getGameKey } from '@/games';
 
 interface ContentViewerProps {
@@ -117,8 +117,32 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
             allow="fullscreen; accelerometer; gyroscope"
           />
         ) : (
-          <div className="p-12 text-center text-slate-500 text-xs">
-            연결된 실행 코드가 없습니다.
+          <div className="p-10 sm:p-12 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center mx-auto text-sky-400">
+              <RefreshCw className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-slate-200">
+                새롭게 추가된 프로그램입니다!
+              </p>
+              <p className="text-xs text-slate-400">
+                현재 브라우저 창이 업데이트 전 버전입니다. 아래 버튼을 눌러 최신 화면을 불러와 주세요.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('game', content.title);
+                  window.location.href = url.toString();
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>최신 버전 불러오기 (바로 실행)</span>
+            </button>
           </div>
         )}
       </div>
