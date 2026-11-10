@@ -348,28 +348,46 @@ export default function App() {
         }
       `}</style>
 
-      {/* 1. 상단 타이틀 & 제어 버튼 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400">
-            <Zap className="w-4 h-4 fill-current" />
-          </div>
-          <div>
-            <h1 className="text-base sm:text-lg font-black tracking-tight text-white leading-tight">
-              1 To 25 스피드 터치
-            </h1>
-            <p className="text-[11px] text-slate-400">
-              1번부터 순서대로 가장 빠르게 터치하세요!
-            </p>
-          </div>
+      {/* 1. 상단 모드 선택 및 제어 바 */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 grid grid-cols-2 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800/80">
+          <button
+            type="button"
+            onClick={() => handleModeChange('normal')}
+            className={`py-2 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              mode === 'normal'
+                ? 'bg-sky-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <span>기본 모드</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded ${mode === 'normal' ? 'bg-sky-500/40 text-sky-100' : 'bg-slate-800 text-slate-400'}`}>
+              1~25
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleModeChange('hard')}
+            className={`py-2 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              mode === 'hard'
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <span>하드 모드</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded ${mode === 'hard' ? 'bg-purple-500/40 text-purple-100' : 'bg-slate-800 text-slate-400'}`}>
+              1~50
+            </span>
+          </button>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={handleToggleMute}
             title={isMuted ? '소리 켜기' : '음소거'}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition-colors cursor-pointer"
+            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition-colors cursor-pointer"
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-slate-400" /> : <Volume2 className="w-4 h-4 text-sky-400" />}
           </button>
@@ -377,44 +395,11 @@ export default function App() {
             type="button"
             onClick={() => resetGame(mode)}
             title="다시 배치 (리셋)"
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition-colors cursor-pointer"
+            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition-colors cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
         </div>
-      </div>
-
-      {/* 2. 모드 선택 탭 (기본 모드 vs 하드 모드) */}
-      <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800/80">
-        <button
-          type="button"
-          onClick={() => handleModeChange('normal')}
-          className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            mode === 'normal'
-              ? 'bg-sky-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          <span>기본 모드</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded ${mode === 'normal' ? 'bg-sky-500/40 text-sky-100' : 'bg-slate-800 text-slate-400'}`}>
-            1~25
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleModeChange('hard')}
-          className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            mode === 'hard'
-              ? 'bg-purple-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          <span>하드 모드</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded ${mode === 'hard' ? 'bg-purple-500/40 text-purple-100' : 'bg-slate-800 text-slate-400'}`}>
-            1~50
-          </span>
-        </button>
       </div>
 
       {/* 3. 상단 대시보드 (다음 숫자 / 현재 시간 / 최고 기록) */}

@@ -127,17 +127,8 @@ export default function App() {
 
   return (
     <div className="w-full max-w-md mx-auto bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-5 shadow-2xl text-[12px] text-slate-100 flex flex-col items-center select-none">
-      {/* 1. 상단 헤더: 프로그램 이름 및 컨트롤러 */}
-      <div className="w-full flex items-center justify-between pb-3 mb-3 border-b border-slate-800/80">
-        <div>
-          <span className="text-[10px] font-bold tracking-widest text-sky-400 uppercase block">
-            ONE STROKE PUZZLE
-          </span>
-          <h1 className="text-[17px] font-black text-white tracking-tight leading-tight mt-0.5">
-            한 붓 그리기
-          </h1>
-        </div>
-
+      {/* 1. 상단 컨트롤러 (사운드 & 리셋 버튼) */}
+      <div className="w-full flex items-center justify-end pb-2.5 mb-2.5 border-b border-slate-800/80">
         {/* 우측 사운드 & 리셋 버튼 */}
         <div className="flex items-center gap-1.5">
           <button
