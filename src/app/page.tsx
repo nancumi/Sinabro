@@ -25,6 +25,7 @@ import {
   trackContentDwellTime,
 } from '@/utils/analytics';
 import { useAuth } from '@/context/AuthContext';
+import { getGameKey } from '@/games';
 
 export default function HomePage() {
   const { isAdmin } = useAuth();
@@ -70,10 +71,26 @@ export default function HomePage() {
     const findMatched = (items: ContentItem[]) => {
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
-        const titleQuery = params.get('title') || params.get('game');
-        if (titleQuery) {
-          const found = items.find((c) => c.title.toLowerCase().includes(titleQuery.toLowerCase()));
-          if (found) return found;
+        const query = (params.get('game') || params.get('title') || '').trim().toLowerCase();
+        if (query) {
+          // 1. getGameKey 영문 식별자 매칭 (예: 'timer', 'roulette', 'animal-memory', 'led-board' 등)
+          const matchedByKey = items.find((c) => {
+            const key = getGameKey(c.title, c.vercelUrl);
+            return key && (key.toLowerCase() === query || query.includes(key.toLowerCase()));
+          });
+          if (matchedByKey) return matchedByKey;
+
+          // 2. 제목(title) 부분 일치 (공백 무시 비교: '시간', '시간맞추기', '타이머', '룰렛' 등)
+          const cleanQuery = query.replace(/\s+/g, '');
+          const matchedByTitle = items.find((c) => {
+            const cleanTitle = c.title.toLowerCase().replace(/\s+/g, '');
+            return cleanTitle.includes(cleanQuery) || cleanQuery.includes(cleanTitle);
+          });
+          if (matchedByTitle) return matchedByTitle;
+
+          // 3. ID 직접 일치
+          const matchedById = items.find((c) => c.id === query);
+          if (matchedById) return matchedById;
         }
       }
       return null;
