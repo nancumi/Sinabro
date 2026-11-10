@@ -110,17 +110,6 @@ export default function GameResult({
                 <span className="font-semibold text-white text-[12px]">
                   {res.participant.name}
                 </span>
-                {isTarget && (
-                  <span
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                      isFirstMode
-                        ? 'bg-amber-500/20 text-amber-300'
-                        : 'bg-rose-500/20 text-rose-300'
-                    }`}
-                  >
-                    {isFirstMode ? '1등' : '꼴등'}
-                  </span>
-                )}
               </div>
 
               <div className="text-right font-mono">
