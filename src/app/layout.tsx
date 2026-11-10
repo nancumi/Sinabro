@@ -33,6 +33,10 @@ export const metadata: Metadata = {
     '그리드샷',
     'Gridshot',
     '에임테스트',
+    '디지털점수판',
+    '모바일점수판',
+    '탁구점수판',
+    '배드민턴점수판',
     '내기게임',
     '술자리게임',
     '시나브로',
@@ -147,6 +151,12 @@ const structuredData = {
       name: '그리드샷 (Gridshot)',
       url: 'https://ws.ai.kr/?game=gridshot',
       description: '격자 공간에 무작위로 나타나는 타겟을 제한 시간 내에 빠르고 정확하게 파괴하여 점수와 반응속도를 측정하는 순발력 슈팅 미니 게임',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '디지털 점수판',
+      url: 'https://ws.ai.kr/?game=scoreboard',
+      description: '운동 경기나 각종 모임 내기에서 스마트폰을 가로로 거치해 세트와 점수를 직관적으로 기록하는 모바일 최적화 점수판',
     },
   ],
 };

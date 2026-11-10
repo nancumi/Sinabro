@@ -22,6 +22,7 @@ import {
   Gamepad2,
   Gauge,
   Crosshair,
+  Columns2,
   LayoutList,
   LayoutGrid,
 } from 'lucide-react';
@@ -48,6 +49,14 @@ export function getContentIconConfig(title: string = '', url: string = ''): Game
   const t = title.toLowerCase();
   const u = url.toLowerCase();
 
+  if (t.includes('점수판') || t.includes('scoreboard') || u.includes('score')) {
+    return {
+      icon: Columns2,
+      bgClass: 'bg-blue-500/15 group-hover:bg-blue-500/25',
+      borderClass: 'border-blue-500/30 group-hover:border-blue-400/60',
+      textClass: 'text-blue-400 group-hover:text-blue-300',
+    };
+  }
   if (t.includes('그리드') || t.includes('gridshot') || u.includes('grid')) {
     return {
       icon: Crosshair,

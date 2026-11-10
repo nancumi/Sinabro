@@ -19,6 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { slug: 'led', priority: 0.8 },
     { slug: 'speed', priority: 0.9 },
     { slug: 'gridshot', priority: 0.9 },
+    { slug: 'scoreboard', priority: 0.9 },
   ];
 
   return [
