@@ -5,7 +5,6 @@ import confetti from 'canvas-confetti';
 import {
   Settings,
   RotateCcw,
-  Undo2,
   ArrowLeftRight,
   Volume2,
   VolumeX,
@@ -507,10 +506,6 @@ export default function App({ showHeader = false }) {
           >
             {team.score}
           </div>
-
-          <span className="mt-2 text-[10px] text-slate-500 font-medium z-10">
-            터치 +1 · 아래로 스와이프 -1
-          </span>
         </div>
 
         {/* 3. 하단 -1 감점 버튼 & +1 퀵 버튼 */}
@@ -690,7 +685,7 @@ export default function App({ showHeader = false }) {
             </div>
           )}
 
-          {/* 중앙 기능 버튼 (진영 교체 & 되돌리기) */}
+          {/* 중앙 기능 버튼 (진영 교체) */}
           <div className="flex sm:flex-col items-center gap-1.5 sm:w-full">
             <button
               type="button"
@@ -700,17 +695,6 @@ export default function App({ showHeader = false }) {
             >
               <ArrowLeftRight className="w-3.5 h-3.5 text-sky-400 shrink-0" />
               <span>진영 교체</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleUndo}
-              disabled={history.length === 0}
-              className="sm:w-full px-2.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 disabled:opacity-35 border border-slate-700 text-slate-200 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
-              title="직전 점수 되돌리기"
-            >
-              <Undo2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>되돌리기</span>
             </button>
           </div>
         </div>
