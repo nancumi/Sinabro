@@ -71,25 +71,37 @@ export default function HomePage() {
     const findMatched = (items: ContentItem[]) => {
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
-        const query = (params.get('game') || params.get('title') || '').trim().toLowerCase();
-        if (query) {
-          // 1. getGameKey 영문 식별자 매칭 (예: 'timer', 'roulette', 'animal-memory', 'led-board' 등)
+        const rawQuery = (params.get('game') || params.get('title') || '').trim();
+        if (rawQuery) {
+          const query = rawQuery.toLowerCase();
+          // A. query 자체를 getGameKey로 변환 (예: 'touch' -> 'finger-touch', 'mole' -> 'mole-whack', '2048' -> 'number-merge' 등)
+          const targetKey = getGameKey(query, query);
+
+          // 1. getGameKey 일치 매칭 (타겟 키 일치 또는 키 포함 관계)
           const matchedByKey = items.find((c) => {
             const key = getGameKey(c.title, c.vercelUrl);
-            return key && (key.toLowerCase() === query || query.includes(key.toLowerCase()));
+            if (!key) return false;
+            if (targetKey && key === targetKey) return true;
+            const k = key.toLowerCase();
+            return k === query || k.includes(query) || query.includes(k);
           });
           if (matchedByKey) return matchedByKey;
 
-          // 2. 제목(title) 부분 일치 (공백 무시 비교: '시간', '시간맞추기', '타이머', '룰렛' 등)
+          // 2. 제목(title) 또는 vercelUrl 부분 일치
           const cleanQuery = query.replace(/\s+/g, '');
-          const matchedByTitle = items.find((c) => {
+          const matchedByTitleOrUrl = items.find((c) => {
             const cleanTitle = c.title.toLowerCase().replace(/\s+/g, '');
-            return cleanTitle.includes(cleanQuery) || cleanQuery.includes(cleanTitle);
+            const cleanUrl = (c.vercelUrl || '').toLowerCase().replace(/\s+/g, '');
+            return (
+              cleanTitle.includes(cleanQuery) ||
+              cleanQuery.includes(cleanTitle) ||
+              cleanUrl.includes(cleanQuery)
+            );
           });
-          if (matchedByTitle) return matchedByTitle;
+          if (matchedByTitleOrUrl) return matchedByTitleOrUrl;
 
           // 3. ID 직접 일치
-          const matchedById = items.find((c) => c.id === query);
+          const matchedById = items.find((c) => c.id === rawQuery || c.id === query);
           if (matchedById) return matchedById;
         }
       }
