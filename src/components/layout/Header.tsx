@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, Settings, ShieldCheck, Megaphone, LogIn, LogOut, BarChart3 } from 'lucide-react';
+import { Sparkles, Settings, Megaphone, LogIn, LogOut, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 interface HeaderProps {
@@ -66,17 +66,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin, onOpenAdConfig, onO
         </div>
       </div>
 
-      {/* 2줄: 관리자 로그인 시 4개 버튼 (관리자, 접속 통계, 콘텐츠 관리, 광고 설정) */}
+      {/* 2줄: 관리자 로그인 시 제어 버튼 (통계, 콘텐츠 관리, 광고 설정) */}
       {isAdmin && (
         <div className="w-full bg-slate-950/90 border-t border-slate-800/70 py-2 px-4 shadow-xs">
           <div className="max-w-7xl mx-auto flex items-center justify-end gap-2 overflow-x-auto no-scrollbar">
-            {/* 1) 관리자 버튼 (이메일 생략) */}
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-800 text-[12px] font-semibold shrink-0">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>관리자</span>
-            </span>
-
-            {/* 2) 접속 통계 */}
+            {/* 1) 통계 버튼 */}
             <button
               type="button"
               onClick={onOpenAnalytics}
@@ -84,10 +78,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin, onOpenAdConfig, onO
               title="실시간 방문자 접속 통계 및 분석"
             >
               <BarChart3 className="w-3.5 h-3.5 text-purple-300" />
-              <span>접속 통계</span>
+              <span>통계</span>
             </button>
 
-            {/* 3) 콘텐츠 관리 (문구 수정) */}
+            {/* 2) 콘텐츠 관리 */}
             <button
               type="button"
               onClick={onOpenAdmin}
@@ -98,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin, onOpenAdConfig, onO
               <span>콘텐츠 관리</span>
             </button>
 
-            {/* 4) 광고 설정 */}
+            {/* 3) 광고 설정 */}
             <button
               type="button"
               onClick={onOpenAdConfig}
