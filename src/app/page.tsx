@@ -23,12 +23,13 @@ import {
   trackSiteVisit,
   trackContentView,
   trackContentDwellTime,
+  isAdminUserSession,
 } from '@/utils/analytics';
 import { useAuth } from '@/context/AuthContext';
 import { getGameKey } from '@/games';
 
 export default function HomePage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isAuthLoading } = useAuth();
 
   // 상태 관리 (초기 카테고리 및 콘텐츠는 미선택 상태로 시작)
   const [categories, setCategories] = useState<Category[]>([]);
@@ -51,13 +52,21 @@ export default function HomePage() {
   const [isAdConfigModalOpen, setIsAdConfigModalOpen] = useState(false);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
 
-  // 현재 재생 중인 콘텐츠 체류 시간 측정을 위한 Ref
+  // 현재 재생 중인 콘텐츠 체류 시간 측정을 위한 Ref 및 관리자 상태 Ref
   const activeContentRef = useRef<{ id: string; startTime: number } | null>(null);
+  const isAdminRef = useRef<boolean>(isAdmin);
+  const siteVisitTrackedRef = useRef<boolean>(false);
 
-  // 1. 초기 로컬 캐시 로드 및 사이트 전체 방문(PV/UV) 추적
+  // 관리자 상태 동기화 (로그인 즉시 체류 타이머 파기하여 통계 미반영)
   useEffect(() => {
-    // 사이트 전체 접속 추적
-    trackSiteVisit();
+    isAdminRef.current = isAdmin;
+    if (isAdmin) {
+      activeContentRef.current = null;
+    }
+  }, [isAdmin]);
+
+  // 1. 초기 로컬 캐시 로드 및 Firestore 구독
+  useEffect(() => {
 
     const localCats = loadLocalCategories();
     const localContents = loadLocalContents();
@@ -136,9 +145,24 @@ export default function HomePage() {
     return () => unsubscribe();
   }, []);
 
-  // 3. 사용자가 게임을 직접 클릭하여 시작했을 때만 방문(PV/UV) 및 머문 시간 추적
+  // 2-1. 인증 상태 확인 완료 후 사이트 전체 방문(PV/UV) 추적 (관리자는 완전 제외)
   useEffect(() => {
-    if (!selectedContent) return;
+    if (isAuthLoading || siteVisitTrackedRef.current) return;
+    siteVisitTrackedRef.current = true;
+    if (!isAdmin && !isAdminUserSession()) {
+      trackSiteVisit();
+    }
+  }, [isAuthLoading, isAdmin]);
+
+  // 3. 사용자가 게임을 직접 클릭하여 시작했을 때만 방문(PV/UV) 및 머문 시간 추적 (관리자는 완전 제외)
+  useEffect(() => {
+    if (!selectedContent || isAuthLoading) return;
+
+    // 관리자로 로그인된 상태이거나 세션이 관리자면 모든 콘텐츠 통계 추적 중단
+    if (isAdmin || isAdminUserSession()) {
+      activeContentRef.current = null;
+      return;
+    }
 
     // A. 이전 콘텐츠 체류 시간 정산
     if (activeContentRef.current) {
@@ -158,8 +182,9 @@ export default function HomePage() {
       startTime: Date.now(),
     };
 
-    // D. 창 닫기 / 새로고침 시 최종 체류 시간 전송
+    // D. 창 닫기 / 새로고침 시 최종 체류 시간 전송 (관리자 전환 시 미전송)
     const handleBeforeUnload = () => {
+      if (isAdminRef.current || isAdminUserSession()) return;
       if (activeContentRef.current) {
         const elapsed = Math.round((Date.now() - activeContentRef.current.startTime) / 1000);
         if (elapsed > 0) {
@@ -172,6 +197,10 @@ export default function HomePage() {
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (isAdminRef.current || isAdminUserSession()) {
+        activeContentRef.current = null;
+        return;
+      }
       if (activeContentRef.current && activeContentRef.current.id === selectedContent.id) {
         const elapsed = Math.round((Date.now() - activeContentRef.current.startTime) / 1000);
         if (elapsed > 0) {
@@ -179,7 +208,7 @@ export default function HomePage() {
         }
       }
     };
-  }, [selectedContent?.id]);
+  }, [selectedContent?.id, isAdmin, isAuthLoading]);
 
   // 카테고리 변경 처리 (Firestore + LocalStorage)
   const handleSaveCategories = async (newCats: Category[]) => {

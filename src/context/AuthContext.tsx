@@ -13,6 +13,7 @@ const ADMIN_EMAIL = 'jiyulain@gmail.com';
 
 interface AuthContextType {
   isAdmin: boolean;
+  isAuthLoading: boolean;
   adminEmail: string;
   user: User | null;
   currentUserEmail: string | null;
@@ -27,6 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
 
   useEffect(() => {
     // 1. Firebase Auth 상태 변화 감지
@@ -51,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setCurrentUserEmail(null);
         }
       }
+      setIsAuthLoading(false);
     });
 
     // 2. URL 파라미터 확인 (?admin=true)
@@ -107,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         isAdmin,
+        isAuthLoading,
         adminEmail: ADMIN_EMAIL,
         user,
         currentUserEmail,

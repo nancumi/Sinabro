@@ -1,4 +1,4 @@
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import {
   doc,
   getDoc,
@@ -15,6 +15,27 @@ import { ContentItem, DailyAnalytics, ContentAnalytics } from '@/types';
 const ANALYTICS_COLLECTION = 'analytics_daily';
 const VID_KEY = 'sinabro_vid_v1';
 const LAST_UV_DATE_KEY = 'sinabro_last_uv_date';
+const ADMIN_EMAIL = 'jiyulain@gmail.com';
+
+// 관리자 로그인 상태인지 확인 (관리자는 모든 통계 기록에서 제외)
+export const isAdminUserSession = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (localStorage.getItem('sinabro_admin_session') === ADMIN_EMAIL) {
+      return true;
+    }
+    if (auth.currentUser?.email === ADMIN_EMAIL) {
+      return true;
+    }
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('admin') === 'true') {
+      return true;
+    }
+  } catch {
+    // ignore storage access errors
+  }
+  return false;
+};
 
 // 로컬 기준 'YYYY-MM-DD' 문자열 생성 (오프셋 일수 지원)
 export const getTodayString = (offsetDays: number = 0): string => {
@@ -61,7 +82,7 @@ export const detectDeviceType = (): 'mobile' | 'desktop' | 'tablet' => {
  * 1. 사이트 전체 접속(PV / UV) 기록
  */
 export const trackSiteVisit = async (): Promise<void> => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || isAdminUserSession()) return;
 
   try {
     const today = getTodayString();
@@ -108,7 +129,7 @@ export const trackSiteVisit = async (): Promise<void> => {
  * 2. 개별 콘텐츠/게임 접속(PV / UV) 기록
  */
 export const trackContentView = async (content: ContentItem): Promise<void> => {
-  if (typeof window === 'undefined' || !content?.id) return;
+  if (typeof window === 'undefined' || !content?.id || isAdminUserSession()) return;
 
   try {
     const today = getTodayString();
@@ -147,7 +168,7 @@ export const trackContentView = async (content: ContentItem): Promise<void> => {
  * 3. 개별 콘텐츠 체류 시간(머문 시간) 기록 (초 단위)
  */
 export const trackContentDwellTime = async (contentId: string, seconds: number): Promise<void> => {
-  if (typeof window === 'undefined' || !contentId || seconds <= 0) return;
+  if (typeof window === 'undefined' || !contentId || seconds <= 0 || isAdminUserSession()) return;
 
   // 비정상적인 장기 유휴 시간(4시간 초과) 방지
   const safeSeconds = Math.min(seconds, 14400);
