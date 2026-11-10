@@ -215,12 +215,18 @@ export const ContentMenuList: React.FC<ContentMenuListProps> = ({
     });
   }, [contents, selectedCategoryId, searchQuery]);
 
+  // 카테고리 변경 시 페이지 번호를 1페이지로 자동 초기화
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategoryId]);
+
   // 페이지 계산
-  const totalPages = Math.ceil(filteredContents.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(filteredContents.length / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
   const paginatedContents = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
+    const startIndex = (safeCurrentPage - 1) * itemsPerPage;
     return filteredContents.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredContents, currentPage, itemsPerPage]);
+  }, [filteredContents, safeCurrentPage, itemsPerPage]);
 
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
@@ -424,7 +430,7 @@ export const ContentMenuList: React.FC<ContentMenuListProps> = ({
       {/* 페이지네이션 (5개 블록 레이아웃) */}
       {totalPages > 1 && (
         <Pagination
-          currentPage={currentPage}
+          currentPage={safeCurrentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
         />
