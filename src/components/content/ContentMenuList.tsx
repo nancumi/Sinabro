@@ -33,7 +33,7 @@ export const ContentMenuList: React.FC<ContentMenuListProps> = ({
   const filteredContents = useMemo(() => {
     return contents.filter((item) => {
       const matchCategory =
-        selectedCategoryId === 'cat-all' || item.categoryId === selectedCategoryId;
+        !selectedCategoryId || selectedCategoryId === 'cat-all' || item.categoryId === selectedCategoryId;
       const matchQuery =
         !searchQuery.trim() ||
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

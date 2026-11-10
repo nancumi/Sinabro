@@ -58,9 +58,14 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
   };
 
   const handleCategoryClick = (catId: string) => {
-    onSelectCategory(catId);
-    // 같은 카테고리 클릭 시 서브메뉴 토글 닫기, 다른 카테고리 클릭 시 열기
-    setOpenSubmenuCatId((prev) => (prev === catId ? null : catId));
+    if (openSubmenuCatId === catId) {
+      // 이미 열려 있는 카테고리를 다시 누르면 닫기 & 선택 해제
+      setOpenSubmenuCatId(null);
+      onSelectCategory('');
+    } else {
+      setOpenSubmenuCatId(catId);
+      onSelectCategory(catId);
+    }
   };
 
   // 현재 열린 서브메뉴에 해당하는 콘텐츠 목록 필터링
@@ -76,7 +81,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-1.5 py-2">
           {categories.map((cat) => {
-            const isSelected = cat.id === selectedCategoryId;
+            const isSelected = selectedCategoryId ? cat.id === selectedCategoryId : false;
             const isSubmenuOpen = cat.id === openSubmenuCatId;
 
             return (

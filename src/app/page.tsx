@@ -29,7 +29,7 @@ import { useAuth } from '@/context/AuthContext';
 export default function HomePage() {
   const { isAdmin } = useAuth();
 
-  // 상태 관리
+  // 상태 관리 (초기 카테고리 및 콘텐츠는 미선택 상태로 시작)
   const [categories, setCategories] = useState<Category[]>([]);
   const [contents, setContents] = useState<ContentItem[]>([]);
   const [adConfig, setAdConfig] = useState<AdConfig>({
@@ -42,7 +42,7 @@ export default function HomePage() {
     bottomSlotId: '',
   });
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('cat-all');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
 
   // 모달 제어 상태
@@ -66,6 +66,7 @@ export default function HomePage() {
     setContents(localContents);
     setAdConfig(localAds);
 
+    // URL 파라미터(?game=... 또는 ?title=...)로 직접 진입한 경우에만 자동 선택
     const findMatched = (items: ContentItem[]) => {
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
@@ -75,11 +76,14 @@ export default function HomePage() {
           if (found) return found;
         }
       }
-      return items[0] || null;
+      return null;
     };
 
     if (localContents.length > 0) {
-      setSelectedContent(findMatched(localContents));
+      const matched = findMatched(localContents);
+      if (matched) {
+        setSelectedContent(matched);
+      }
     }
 
     // 2. Firestore 실시간 동기화 구독
@@ -92,7 +96,7 @@ export default function HomePage() {
         setSelectedContent((prev) => {
           if (!prev) return findMatched(data.contents);
           const found = data.contents.find((c) => c.id === prev.id);
-          return found || findMatched(data.contents);
+          return found || null;
         });
       }
       if (data.adConfig) {
@@ -103,7 +107,7 @@ export default function HomePage() {
     return () => unsubscribe();
   }, []);
 
-  // 3. 개별 콘텐츠 방문 및 체류 시간(머문 시간) 추적
+  // 3. 사용자가 게임을 직접 클릭하여 시작했을 때만 방문(PV/UV) 및 머문 시간 추적
   useEffect(() => {
     if (!selectedContent) return;
 
@@ -160,13 +164,7 @@ export default function HomePage() {
     await saveContents(newContents);
     if (selectedContent) {
       const updatedCurrent = newContents.find((item) => item.id === selectedContent.id);
-      if (updatedCurrent) {
-        setSelectedContent(updatedCurrent);
-      } else if (newContents.length > 0) {
-        setSelectedContent(newContents[0]);
-      } else {
-        setSelectedContent(null);
-      }
+      setSelectedContent(updatedCurrent || null);
     }
   };
 

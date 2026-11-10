@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ContentItem } from '@/types';
-import { Settings, Sparkles, Plus } from 'lucide-react';
+import { Settings, Sparkles, Plus, Play, Gamepad2 } from 'lucide-react';
 import { GAME_REGISTRY, getGameKey } from '@/games';
 
 interface ContentViewerProps {
@@ -19,7 +19,7 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
   const [dynamicHeight, setDynamicHeight] = useState<number | null>(null);
 
   useEffect(() => {
-    // 혹시 외부 iframe을 로드할 경우를 위한 auto-resize 리스너
+    // 외부 iframe을 로드할 경우를 위한 auto-resize 리스너
     const handleMessage = (event: MessageEvent) => {
       if (
         (event.data?.type === 'SINABRO_RESIZE' || event.data?.type === 'SET_HEIGHT') &&
@@ -32,25 +32,37 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+  // 0. 초기 접속 시 웰컴 대문 화면 (아직 콘텐츠를 선택하지 않은 상태)
   if (!content) {
     return (
-      <div className="w-full min-h-[420px] bg-slate-900 rounded-xl border border-slate-800 shadow-sm flex flex-col items-center justify-center p-6 text-center text-slate-400">
-        <div className="w-12 h-12 rounded-2xl bg-slate-800 text-sky-400 flex items-center justify-center mb-3 border border-slate-700">
-          <Sparkles className="w-6 h-6" />
+      <div className="w-full min-h-[460px] bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl flex flex-col items-center justify-center p-8 text-center text-slate-400 select-none">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-sky-600/20 to-blue-500/20 text-sky-400 flex items-center justify-center mb-4 border border-sky-500/30 shadow-lg shadow-sky-500/10">
+          <Sparkles className="w-8 h-8 animate-pulse text-sky-400" />
         </div>
-        <h4 className="text-[13px] font-semibold text-slate-200 mb-4">
+        <h3 className="text-base sm:text-lg font-black text-slate-100 mb-2">
           즐길 콘텐츠를 선택해 주세요
-        </h4>
-        {isAdmin && (
-          <button
-            type="button"
-            onClick={onOpenAdmin}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12px] font-medium bg-sky-950/80 hover:bg-sky-900 text-sky-200 border border-sky-700/60 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            새 콘텐츠 등록하기
-          </button>
-        )}
+        </h3>
+        <p className="text-xs text-slate-400 max-w-sm mb-6 leading-relaxed">
+          상단 카테고리 메뉴를 누르거나 오른쪽 목록에서 원하는 게임 및 유용한 도구를 선택해 보세요!
+        </p>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 text-xs font-semibold">
+            <Gamepad2 className="w-4 h-4 text-sky-400" />
+            <span>원하는 게임을 클릭하면 즉시 실행됩니다</span>
+          </div>
+
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={onOpenAdmin}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-sky-950/90 hover:bg-sky-900 text-sky-200 border border-sky-700/70 transition-all cursor-pointer shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5 text-sky-300" />
+              <span>새 콘텐츠 등록</span>
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -58,80 +70,55 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
   // 1. 네이티브 React 게임 컴포넌트 매칭 (iframe 없는 직접 렌더링)
   const gameKey = getGameKey(content.title, content.vercelUrl);
   const NativeGameComponent = gameKey ? GAME_REGISTRY[gameKey] : null;
-  const hasUrl = Boolean(content.vercelUrl && content.vercelUrl.trim().length > 0);
 
   return (
-    <div
-      style={!NativeGameComponent && dynamicHeight ? { height: `${dynamicHeight}px` } : undefined}
-      className={`relative bg-slate-950 rounded-xl border border-slate-800 shadow-sm flex flex-col transition-all overflow-hidden w-full ${
-        NativeGameComponent ? '' : dynamicHeight ? '' : 'min-h-[600px]'
-      }`}
-    >
+    <div className="w-full bg-slate-900 rounded-2xl border border-slate-800 shadow-lg overflow-hidden flex flex-col">
       {/* 콘텐츠 상단 바 */}
-      <div className="flex items-center justify-between px-3 py-2 bg-slate-900/95 border-b border-slate-800 text-slate-200 select-none">
-        <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
-          <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
-          <span className="font-semibold text-[12px] text-slate-100 shrink-0 max-w-[120px] sm:max-w-[180px] md:max-w-[220px] truncate">
-            {content.title}
+      <div className="bg-slate-950/90 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
+            <Sparkles className="w-4 h-4 shrink-0" />
           </span>
-          {content.description && (
-            <span className="text-[11px] text-slate-400 truncate flex-1 min-w-0" title={content.description}>
-              - {content.description}
-            </span>
-          )}
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-slate-100 truncate">{content.title}</h3>
+            {content.description && (
+              <p className="text-[11px] text-slate-400 truncate">{content.description}</p>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={onOpenAdmin}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 transition-colors"
-              title="콘텐츠 정보 편집"
-            >
-              <Settings className="w-3 h-3" />
-              편집
-            </button>
-          )}
-        </div>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={onOpenAdmin}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors shrink-0 cursor-pointer"
+            title="콘텐츠 수정/관리"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">편집</span>
+          </button>
+        )}
       </div>
 
-      {/* 실행 영역 (네이티브 컴포넌트 직접 실행 또는 외부 URL fallback) */}
-      <div className="relative w-full bg-slate-950 flex flex-col items-center">
+      {/* 콘텐츠 본문 뷰어 (네이티브 컴포넌트 또는 Vercel URL iframe) */}
+      <div className="w-full flex-1 flex flex-col items-center justify-center bg-slate-950/40 p-2 sm:p-4">
         {NativeGameComponent ? (
-          // ★ 아이프레임 없이 게임 크기에 딱 맞춰 자연스럽게 렌더링 ★
-          <div className="w-full flex justify-center py-1 sm:py-2 px-1 sm:px-2">
+          <div className="w-full">
             <NativeGameComponent />
           </div>
-        ) : hasUrl ? (
-          // 외부 Vercel URL이 따로 있는 경우 fallback iframe
+        ) : content.vercelUrl ? (
           <iframe
             src={content.vercelUrl}
             title={content.title}
-            className="w-full h-full min-h-[600px] border-0 bg-slate-950"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+            style={{
+              height: dynamicHeight ? `${dynamicHeight}px` : '720px',
+            }}
+            className="w-full border-0 rounded-xl bg-slate-950 shadow-inner transition-all duration-300"
+            allow="fullscreen; accelerometer; gyroscope"
           />
         ) : (
-          <div className="flex flex-col items-center justify-center p-8 text-center text-slate-400">
-            <div className="p-3 bg-slate-900 rounded-full mb-3 border border-slate-800">
-              <Settings className="w-6 h-6 text-amber-400" />
-            </div>
-            <h4 className="text-[12px] font-semibold text-slate-200 mb-1">
-              연결된 게임 콘텐츠가 없습니다
-            </h4>
-            <p className="text-[11px] text-slate-400 max-w-sm mb-4 leading-relaxed">
-              관리자 설정에서 콘텐츠 이름을 등록하시면 해당 게임이 즉시 화면에 실행됩니다.
-            </p>
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={onOpenAdmin}
-                className="px-3.5 py-1.5 rounded-lg text-[12px] font-medium bg-sky-950/80 hover:bg-sky-900 text-sky-200 border border-sky-700/60 transition-colors"
-              >
-                콘텐츠 등록하기
-              </button>
-            )}
+          <div className="p-12 text-center text-slate-500 text-xs">
+            연결된 실행 코드가 없습니다.
           </div>
         )}
       </div>
