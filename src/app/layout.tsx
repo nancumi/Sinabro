@@ -139,7 +139,7 @@ const structuredData = {
     },
     {
       '@type': 'WebApplication',
-      name: 'LED 전광판 만들기',
+      name: 'LED 전광판',
       url: 'https://ws.ai.kr/?game=led',
       description: '콘서트, 공항 마중, 응원용 네온 글씨가 흐르는 나만의 모바일 LED 전광판',
     },

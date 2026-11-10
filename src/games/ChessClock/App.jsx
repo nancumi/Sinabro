@@ -514,47 +514,48 @@ export default function App({ showHeader = false }) {
       {/* 1. 상단 플레이어 영역 (기본 180도 반전) */}
       {renderPlayerPad('top')}
 
-      {/* 2. 중앙 공용 컨트롤 바 */}
-      <div className="bg-slate-950/90 border border-slate-800 rounded-xl px-2.5 py-2 flex items-center justify-between gap-1.5 z-20">
-        {/* 좌측: 시작 / 일시정지 버튼 */}
-        <button
-          type="button"
-          onClick={handleStartPause}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-black text-xs transition-all cursor-pointer active:scale-95 ${
-            status === 'RUNNING'
-              ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
-              : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-          }`}
-        >
-          {status === 'RUNNING' ? (
-            <>
-              <Pause className="w-3.5 h-3.5 fill-current" />
-              <span>일시정지</span>
-            </>
-          ) : (
-            <>
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{status === 'PAUSED' ? '재개' : '시작'}</span>
-            </>
-          )}
-        </button>
+      {/* 2. 중앙 공용 컨트롤 바 (2줄 구성) */}
+      <div className="bg-slate-950/90 border border-slate-800 rounded-xl px-3 py-2.5 flex flex-col gap-2 z-20">
+        {/* 1번줄: 설정 버튼 (왼쪽) + 시작/일시정지 버튼 (바로 옆) */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/70 text-xs font-bold transition-colors cursor-pointer"
+            title="시간 및 피셔 보너스 설정"
+          >
+            <Settings className="w-3.5 h-3.5 text-sky-400" />
+            <span>
+              {presetLabel}
+              {bonusSeconds > 0 ? ` +${bonusSeconds}s` : ''}
+            </span>
+          </button>
 
-        {/* 중앙: 현재 시간 규칙 배지 & 설정 버튼 */}
-        <button
-          type="button"
-          onClick={() => setIsSettingsOpen(true)}
-          className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/70 text-[11px] font-bold transition-colors cursor-pointer"
-          title="시간 및 피셔 보너스 설정"
-        >
-          <Settings className="w-3.5 h-3.5 text-sky-400" />
-          <span>
-            {presetLabel}
-            {bonusSeconds > 0 ? ` +${bonusSeconds}s` : ''}
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={handleStartPause}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-black text-xs transition-all cursor-pointer active:scale-95 ${
+              status === 'RUNNING'
+                ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+            }`}
+          >
+            {status === 'RUNNING' ? (
+              <>
+                <Pause className="w-3.5 h-3.5 fill-current" />
+                <span>일시정지</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>{status === 'PAUSED' ? '재개' : '시작'}</span>
+              </>
+            )}
+          </button>
+        </div>
 
-        {/* 우측: 반전 토글, 사운드, 전체화면, 리셋 */}
-        <div className="flex items-center gap-1">
+        {/* 2번줄: 상단 반전 ~ 시간 초기화 버튼 (오른쪽 정렬) */}
+        <div className="flex items-center justify-end gap-1.5">
           <button
             type="button"
             onClick={() => setIsTopFlipped((prev) => !prev)}
