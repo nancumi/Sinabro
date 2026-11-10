@@ -1,5 +1,15 @@
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, increment, collection, query, where, getDocs } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  increment,
+  collection,
+  query,
+  where,
+  getDocs,
+  onSnapshot,
+} from 'firebase/firestore';
 import { ContentItem, DailyAnalytics, ContentAnalytics } from '@/types';
 
 const ANALYTICS_COLLECTION = 'analytics_daily';
@@ -202,5 +212,39 @@ export const fetchDateRangeAnalytics = async (
   } catch (err) {
     console.error(`Failed to fetch date range analytics (${startDate} ~ ${endDate}):`, err);
     return [];
+  }
+};
+
+/**
+ * 6. 시작일~종료일 기간별 실시간 통계 구독 (onSnapshot 웹소켓 실시간 동기화)
+ */
+export const subscribeToDateRangeAnalytics = (
+  startDate: string,
+  endDate: string,
+  onUpdate: (data: DailyAnalytics[]) => void
+): (() => void) => {
+  try {
+    const q = query(
+      collection(db, ANALYTICS_COLLECTION),
+      where('date', '>=', startDate),
+      where('date', '<=', endDate)
+    );
+    const unsubscribe = onSnapshot(
+      q,
+      (snap) => {
+        const list: DailyAnalytics[] = [];
+        snap.forEach((d) => {
+          list.push(d.data() as DailyAnalytics);
+        });
+        onUpdate(list);
+      },
+      (err) => {
+        console.error(`Realtime analytics subscription error (${startDate} ~ ${endDate}):`, err);
+      }
+    );
+    return unsubscribe;
+  } catch (err) {
+    console.error(`Failed to subscribe date range analytics (${startDate} ~ ${endDate}):`, err);
+    return () => {};
   }
 };

@@ -23,6 +23,7 @@ import {
 import { DailyAnalytics, ContentAnalytics } from '@/types';
 import {
   fetchDateRangeAnalytics,
+  subscribeToDateRangeAnalytics,
   getTodayString,
   formatDateToYMD,
 } from '@/utils/analytics';
@@ -116,92 +117,107 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
     setEndDate(today);
   }, []);
 
+  // 복수일자 종합 합산 처리 헬퍼 함수
+  const processAnalyticsList = (list: DailyAnalytics[], start: string, end: string) => {
+    if (list.length === 0) {
+      setAnalyticsData(null);
+      setAllContents([]);
+      return;
+    }
+
+    // 복수일자 종합 합산
+    const combined: DailyAnalytics = {
+      date: start === end ? start : `${start} ~ ${end}`,
+      totalPv: list.reduce((acc, cur) => acc + (cur.totalPv || 0), 0),
+      totalUv: list.reduce((acc, cur) => acc + (cur.totalUv || 0), 0),
+      deviceStats: {
+        mobile: list.reduce((acc, cur) => acc + (cur.deviceStats?.mobile || 0), 0),
+        desktop: list.reduce((acc, cur) => acc + (cur.deviceStats?.desktop || 0), 0),
+        tablet: list.reduce((acc, cur) => acc + (cur.deviceStats?.tablet || 0), 0),
+      },
+      hourlyPv: {},
+      contents: {},
+      updatedAt: Date.now(),
+    };
+
+    // 시간대별 합산
+    for (let h = 0; h < 24; h++) {
+      const hourKey = String(h);
+      combined.hourlyPv![hourKey] = list.reduce(
+        (acc, cur) => acc + (cur.hourlyPv?.[hourKey] || 0),
+        0
+      );
+    }
+
+    // 콘텐츠별 합산
+    const mergedContents: Record<string, ContentAnalytics> = {};
+    list.forEach((day) => {
+      if (day.contents) {
+        Object.values(day.contents).forEach((c) => {
+          if (!mergedContents[c.id]) {
+            mergedContents[c.id] = {
+              id: c.id,
+              title: c.title,
+              pv: c.pv || 0,
+              uv: c.uv || 0,
+              totalDwellSeconds: c.totalDwellSeconds || 0,
+            };
+          } else {
+            mergedContents[c.id].pv += c.pv || 0;
+            mergedContents[c.id].uv += c.uv || 0;
+            mergedContents[c.id].totalDwellSeconds += c.totalDwellSeconds || 0;
+          }
+        });
+      }
+    });
+
+    combined.contents = mergedContents;
+    setAnalyticsData(combined);
+    setAllContents(Object.values(mergedContents));
+  };
+
   // 프리셋 버튼 클릭 핸들러
   const handleSelectPreset = (preset: PresetType) => {
     setActivePreset(preset);
     const { start, end } = getPresetDates(preset);
     setStartDate(start);
     setEndDate(end);
-    loadData(start, end);
+    setCurrentPage(1);
   };
 
-  // 데이터 로드
-  const loadData = async (start: string, end: string) => {
+  // 실시간 구독 (모달이 열려 있는 동안 파이어스토어 onSnapshot 실시간 동기화)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const today = getTodayString();
+    const start = startDate || today;
+    const end = endDate || today;
     if (!start || !end) return;
+
+    setIsLoading(true);
+
+    const unsubscribe = subscribeToDateRangeAnalytics(start, end, (list) => {
+      processAnalyticsList(list, start, end);
+      setIsLoading(false);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [isOpen, startDate, endDate]);
+
+  // 수동 새로고침 핸들러
+  const handleManualRefresh = async () => {
+    if (!startDate || !endDate) return;
     setIsLoading(true);
     setCurrentPage(1);
-
     try {
-      const list = await fetchDateRangeAnalytics(start, end);
-
-      if (list.length === 0) {
-        setAnalyticsData(null);
-        setAllContents([]);
-        return;
-      }
-
-      // 복수일자 종합 합산
-      const combined: DailyAnalytics = {
-        date: start === end ? start : `${start} ~ ${end}`,
-        totalPv: list.reduce((acc, cur) => acc + (cur.totalPv || 0), 0),
-        totalUv: list.reduce((acc, cur) => acc + (cur.totalUv || 0), 0),
-        deviceStats: {
-          mobile: list.reduce((acc, cur) => acc + (cur.deviceStats?.mobile || 0), 0),
-          desktop: list.reduce((acc, cur) => acc + (cur.deviceStats?.desktop || 0), 0),
-          tablet: list.reduce((acc, cur) => acc + (cur.deviceStats?.tablet || 0), 0),
-        },
-        hourlyPv: {},
-        contents: {},
-        updatedAt: Date.now(),
-      };
-
-      // 시간대별 합산
-      for (let h = 0; h < 24; h++) {
-        const hourKey = String(h);
-        combined.hourlyPv![hourKey] = list.reduce(
-          (acc, cur) => acc + (cur.hourlyPv?.[hourKey] || 0),
-          0
-        );
-      }
-
-      // 콘텐츠별 합산
-      const mergedContents: Record<string, ContentAnalytics> = {};
-      list.forEach((day) => {
-        if (day.contents) {
-          Object.values(day.contents).forEach((c) => {
-            if (!mergedContents[c.id]) {
-              mergedContents[c.id] = {
-                id: c.id,
-                title: c.title,
-                pv: c.pv || 0,
-                uv: c.uv || 0,
-                totalDwellSeconds: c.totalDwellSeconds || 0,
-              };
-            } else {
-              mergedContents[c.id].pv += c.pv || 0;
-              mergedContents[c.id].uv += c.uv || 0;
-              mergedContents[c.id].totalDwellSeconds += c.totalDwellSeconds || 0;
-            }
-          });
-        }
-      });
-
-      combined.contents = mergedContents;
-      setAnalyticsData(combined);
-      setAllContents(Object.values(mergedContents));
+      const list = await fetchDateRangeAnalytics(startDate, endDate);
+      processAnalyticsList(list, startDate, endDate);
     } finally {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (isOpen) {
-      const today = getTodayString();
-      const start = startDate || today;
-      const end = endDate || today;
-      loadData(start, end);
-    }
-  }, [isOpen]);
 
   // 표 정렬 핸들러
   const handleSort = (field: SortField) => {
@@ -306,11 +322,17 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
               <BarChart3 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-black tracking-tight text-white">
-                실시간 방문자 접속 통계 & 종합 분석
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-black tracking-tight text-white">
+                  방문자 접속 통계 & 종합 분석
+                </h2>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>실시간 동기화</span>
+                </div>
+              </div>
               <p className="text-xs text-slate-400">
-                일 단위 전체 접속자 수, 페이지별 순수/중복 방문 및 체류 시간을 종합 정리합니다.
+                일 단위 전체 접속자 수, 페이지별 순수/중복 방문 및 체류 시간을 실시간 자동 집계합니다.
               </p>
             </div>
           </div>
@@ -434,7 +456,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
 
             <button
               type="button"
-              onClick={() => loadData(startDate, endDate)}
+              onClick={handleManualRefresh}
               disabled={isLoading}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white font-semibold transition-colors cursor-pointer"
             >
