@@ -100,26 +100,42 @@ export default function App({ showHeader = false }) {
     statusRef.current = status;
   }, [status]);
 
-  // 전체화면 상태 동기화
+  // 전체화면 상태 동기화 (ESC 키 등으로 공식 전체화면 해제 시 동기화)
   useEffect(() => {
-    const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    const onFsChange = () => {
+      if (!document.fullscreenElement) {
+        setIsFullscreen(false);
+      }
+    };
     document.addEventListener('fullscreenchange', onFsChange);
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
 
+  // PC·안드로이드(공식 Fullscreen API) + 아이폰(iOS CSS 풀스크린 폴백) 동시 지원
   const handleToggleFullscreen = async () => {
-    try {
-      if (!document.fullscreenElement) {
+    if (isFullscreen) {
+      try {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+      } catch {
+        // ignore
+      }
+      setIsFullscreen(false);
+    } else {
+      try {
         if (containerRef.current?.requestFullscreen) {
           await containerRef.current.requestFullscreen();
-        } else {
+          setIsFullscreen(true);
+        } else if (document.documentElement?.requestFullscreen) {
           await document.documentElement.requestFullscreen();
+          setIsFullscreen(true);
+        } else {
+          setIsFullscreen(true);
         }
-      } else {
-        await document.exitFullscreen();
+      } catch {
+        setIsFullscreen(true);
       }
-    } catch {
-      // ignore
     }
   };
 
@@ -481,8 +497,10 @@ export default function App({ showHeader = false }) {
   return (
     <div
       ref={containerRef}
-      className={`w-full max-w-lg mx-auto bg-slate-900/95 border border-slate-800 rounded-2xl shadow-2xl p-3 sm:p-4 flex flex-col gap-2.5 select-none relative overflow-hidden ${
-        isFullscreen ? 'min-h-screen max-w-none rounded-none justify-between' : ''
+      className={`w-full mx-auto bg-slate-900/95 border border-slate-800 shadow-2xl p-3 sm:p-4 flex flex-col gap-2.5 select-none overflow-hidden ${
+        isFullscreen
+          ? 'fixed inset-0 z-50 max-w-none rounded-none justify-between h-[100dvh]'
+          : 'max-w-lg rounded-2xl relative'
       }`}
     >
       {/* 보너스 팝업 애니메이션 CSS */}
@@ -586,7 +604,7 @@ export default function App({ showHeader = false }) {
             type="button"
             onClick={handleToggleFullscreen}
             title={isFullscreen ? '전체화면 종료' : '전체화면'}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition-colors cursor-pointer hidden sm:inline-flex"
+            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition-colors cursor-pointer inline-flex"
           >
             {isFullscreen ? (
               <Minimize2 className="w-3.5 h-3.5 text-sky-400" />
