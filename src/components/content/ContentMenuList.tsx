@@ -20,6 +20,7 @@ import {
   Brain,
   Megaphone,
   Gamepad2,
+  Gauge,
   LayoutList,
   LayoutGrid,
 } from 'lucide-react';
@@ -76,6 +77,14 @@ export function getContentIconConfig(title: string = '', url: string = ''): Game
       bgClass: 'bg-amber-500/15 group-hover:bg-amber-500/25',
       borderClass: 'border-amber-500/30 group-hover:border-amber-400/60',
       textClass: 'text-amber-400 group-hover:text-amber-300',
+    };
+  }
+  if (t.includes('스피드') || t.includes('1 to 25') || t.includes('1to25') || u.includes('speed')) {
+    return {
+      icon: Gauge,
+      bgClass: 'bg-indigo-500/15 group-hover:bg-indigo-500/25',
+      borderClass: 'border-indigo-500/30 group-hover:border-indigo-400/60',
+      textClass: 'text-indigo-400 group-hover:text-indigo-300',
     };
   }
   if (t.includes('손가락') || t.includes('터치') || u.includes('finger-touch') || u.includes('touch')) {

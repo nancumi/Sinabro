@@ -28,6 +28,8 @@ export const metadata: Metadata = {
     '한붓그리기',
     '동물기억력',
     'LED전광판',
+    '1to25',
+    '스피드터치',
     '내기게임',
     '술자리게임',
     '시나브로',
@@ -130,6 +132,12 @@ const structuredData = {
       name: 'LED 전광판 만들기',
       url: 'https://ws.ai.kr/?game=led',
       description: '콘서트, 공항 마중, 응원용 네온 글씨가 흐르는 나만의 모바일 LED 전광판',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '1 To 25 스피드 터치',
+      url: 'https://ws.ai.kr/?game=speed',
+      description: '무작위로 섞인 숫자를 1번부터 순서대로 최대한 빠르게 터치해 기록을 겨루는 순발력 미니 게임',
     },
   ],
 };

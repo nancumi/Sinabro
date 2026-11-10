@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { slug: 'stroke', priority: 0.8 },
     { slug: 'animal', priority: 0.8 },
     { slug: 'led', priority: 0.8 },
+    { slug: 'speed', priority: 0.9 },
   ];
 
   return [
