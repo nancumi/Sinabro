@@ -20,6 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { slug: 'speed', priority: 0.9 },
     { slug: 'gridshot', priority: 0.9 },
     { slug: 'scoreboard', priority: 0.9 },
+    { slug: 'chess', priority: 0.9 },
   ];
 
   return [

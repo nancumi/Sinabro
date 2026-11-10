@@ -118,6 +118,14 @@ export const GAME_REGISTRY: Record<string, React.ComponentType> = {
       </div>
     ),
   }),
+  'chess-clock': dynamic(() => import('./ChessClock/App'), {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center p-12 text-slate-400 text-[12px]">
+        타이머를 로딩하는 중입니다...
+      </div>
+    ),
+  }),
 };
 
 // 콘텐츠 제목 또는 URL로 등록된 게임 키를 자동으로 매칭
@@ -125,6 +133,7 @@ export function getGameKey(title: string = '', url: string = ''): string | null 
   const t = title.toLowerCase();
   const u = url.toLowerCase();
 
+  if (t.includes('게임 타이머') || t.includes('게임타이머') || t.includes('대국') || t.includes('체스') || t.includes('chess') || u.includes('chess')) return 'chess-clock';
   if (t.includes('점수판') || t.includes('scoreboard') || t.includes('score') || u.includes('scoreboard') || u.includes('score')) return 'scoreboard';
   if (t.includes('그리드') || t.includes('gridshot') || t.includes('grid-shot') || u.includes('grid')) return 'gridshot';
   if (t.includes('전광판') || t.includes('led') || u.includes('led') || u.includes('board')) return 'led-board';

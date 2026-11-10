@@ -23,6 +23,7 @@ import {
   Gauge,
   Crosshair,
   Columns2,
+  Hourglass,
   LayoutList,
   LayoutGrid,
 } from 'lucide-react';
@@ -49,6 +50,14 @@ export function getContentIconConfig(title: string = '', url: string = ''): Game
   const t = title.toLowerCase();
   const u = url.toLowerCase();
 
+  if (t.includes('게임 타이머') || t.includes('게임타이머') || t.includes('대국') || t.includes('chess') || u.includes('chess')) {
+    return {
+      icon: Hourglass,
+      bgClass: 'bg-emerald-500/15 group-hover:bg-emerald-500/25',
+      borderClass: 'border-emerald-500/30 group-hover:border-emerald-400/60',
+      textClass: 'text-emerald-400 group-hover:text-emerald-300',
+    };
+  }
   if (t.includes('점수판') || t.includes('scoreboard') || u.includes('score')) {
     return {
       icon: Columns2,

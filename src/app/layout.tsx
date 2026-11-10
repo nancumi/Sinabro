@@ -37,6 +37,9 @@ export const metadata: Metadata = {
     '모바일점수판',
     '탁구점수판',
     '배드민턴점수판',
+    '게임타이머',
+    '체스시계',
+    '대국타이머',
     '내기게임',
     '술자리게임',
     '시나브로',
@@ -157,6 +160,12 @@ const structuredData = {
       name: '디지털 점수판',
       url: 'https://ws.ai.kr/?game=scoreboard',
       description: '운동 경기나 각종 모임 내기에서 스마트폰을 가로로 거치해 세트와 점수를 직관적으로 기록하는 모바일 최적화 점수판',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '게임 타이머',
+      url: 'https://ws.ai.kr/?game=chess',
+      description: '바둑, 체스, 보드게임 등에서 마주 앉아 스마트폰을 가운데 두고 각자의 제한 시간을 번갈아 가며 누르는 2인용 대국 타이머',
     },
   ],
 };
