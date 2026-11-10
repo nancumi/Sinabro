@@ -21,6 +21,7 @@ import {
   Megaphone,
   Gamepad2,
   Gauge,
+  Crosshair,
   LayoutList,
   LayoutGrid,
 } from 'lucide-react';
@@ -47,6 +48,14 @@ export function getContentIconConfig(title: string = '', url: string = ''): Game
   const t = title.toLowerCase();
   const u = url.toLowerCase();
 
+  if (t.includes('그리드') || t.includes('gridshot') || u.includes('grid')) {
+    return {
+      icon: Crosshair,
+      bgClass: 'bg-cyan-500/15 group-hover:bg-cyan-500/25',
+      borderClass: 'border-cyan-500/30 group-hover:border-cyan-400/60',
+      textClass: 'text-cyan-400 group-hover:text-cyan-300',
+    };
+  }
   if (t.includes('전광판') || t.includes('led') || u.includes('led')) {
     return {
       icon: Megaphone,

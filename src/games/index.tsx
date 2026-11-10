@@ -102,6 +102,14 @@ export const GAME_REGISTRY: Record<string, React.ComponentType> = {
       </div>
     ),
   }),
+  'gridshot': dynamic(() => import('./GridShotGame/App'), {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center p-12 text-slate-400 text-[12px]">
+        게임을 로딩하는 중입니다...
+      </div>
+    ),
+  }),
 };
 
 // 콘텐츠 제목 또는 URL로 등록된 게임 키를 자동으로 매칭
@@ -109,6 +117,7 @@ export function getGameKey(title: string = '', url: string = ''): string | null 
   const t = title.toLowerCase();
   const u = url.toLowerCase();
 
+  if (t.includes('그리드') || t.includes('gridshot') || t.includes('grid-shot') || u.includes('grid')) return 'gridshot';
   if (t.includes('전광판') || t.includes('led') || u.includes('led') || u.includes('board')) return 'led-board';
   if (t.includes('동물') || t.includes('기억력') || t.includes('animal') || u.includes('animal') || u.includes('memory')) return 'animal-memory';
   if (t.includes('한 붓') || t.includes('한붓') || t.includes('stroke') || u.includes('onestroke') || u.includes('stroke')) return 'one-stroke';

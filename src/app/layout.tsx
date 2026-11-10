@@ -30,6 +30,9 @@ export const metadata: Metadata = {
     'LED전광판',
     '1to25',
     '스피드터치',
+    '그리드샷',
+    'Gridshot',
+    '에임테스트',
     '내기게임',
     '술자리게임',
     '시나브로',
@@ -138,6 +141,12 @@ const structuredData = {
       name: '1 To 25 스피드 터치',
       url: 'https://ws.ai.kr/?game=speed',
       description: '무작위로 섞인 숫자를 1번부터 순서대로 최대한 빠르게 터치해 기록을 겨루는 순발력 미니 게임',
+    },
+    {
+      '@type': 'WebApplication',
+      name: '그리드샷 (Gridshot)',
+      url: 'https://ws.ai.kr/?game=gridshot',
+      description: '격자 공간에 무작위로 나타나는 타겟을 제한 시간 내에 빠르고 정확하게 파괴하여 점수와 반응속도를 측정하는 순발력 슈팅 미니 게임',
     },
   ],
 };
