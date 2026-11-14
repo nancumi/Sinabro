@@ -290,32 +290,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
     return sortedContents.slice(startIdx, startIdx + PAGE_SIZE);
   }, [sortedContents, currentPage]);
 
-  if (!isOpen) return null;
-
-  const totalPv = analyticsData?.totalPv || 0;
-  const totalUv = analyticsData?.totalUv || 0;
-  const pvPerUv = totalUv > 0 ? (totalPv / totalUv).toFixed(1) : '0';
-
-  // 총 체류 시간 및 평균 체류 시간 계산
-  const totalDwellAll = allContents.reduce((acc, c) => acc + (c.totalDwellSeconds || 0), 0);
-  const avgDwellAll = totalPv > 0 ? Math.round(totalDwellAll / totalPv) : 0;
-
-  // 디바이스 비율
-  const mobileCount = analyticsData?.deviceStats?.mobile || 0;
-  const desktopCount = analyticsData?.deviceStats?.desktop || 0;
-  const tabletCount = analyticsData?.deviceStats?.tablet || 0;
-  const deviceTotal = mobileCount + desktopCount + tabletCount || 1;
-  const mobilePct = Math.round((mobileCount / deviceTotal) * 100);
-  const desktopPct = Math.round((desktopCount / deviceTotal) * 100);
-  const tabletPct = Math.round((tabletCount / deviceTotal) * 100);
-
-  // 시간대별 최대 PV (차트 높이 기준)
-  const maxHourlyPv = Math.max(
-    ...Array.from({ length: 24 }).map((_, h) => analyticsData?.hourlyPv?.[String(h)] || 0),
-    1
-  );
-
   // 날짜별 방문 트렌드 데이터 생성 (연속된 일자 목록 + 일별 PV/UV 매핑)
+  // ※ React Hooks 규칙 준수를 위해 early return(if (!isOpen)) 이전에 선언 필수
   const dailyTrendData = useMemo(() => {
     if (!startDate || !endDate) return [];
 
@@ -363,6 +339,31 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
   const maxDailyPv = useMemo(() => {
     return Math.max(...dailyTrendData.map((d) => d.pv), 1);
   }, [dailyTrendData]);
+
+  if (!isOpen) return null;
+
+  const totalPv = analyticsData?.totalPv || 0;
+  const totalUv = analyticsData?.totalUv || 0;
+  const pvPerUv = totalUv > 0 ? (totalPv / totalUv).toFixed(1) : '0';
+
+  // 총 체류 시간 및 평균 체류 시간 계산
+  const totalDwellAll = allContents.reduce((acc, c) => acc + (c.totalDwellSeconds || 0), 0);
+  const avgDwellAll = totalPv > 0 ? Math.round(totalDwellAll / totalPv) : 0;
+
+  // 디바이스 비율
+  const mobileCount = analyticsData?.deviceStats?.mobile || 0;
+  const desktopCount = analyticsData?.deviceStats?.desktop || 0;
+  const tabletCount = analyticsData?.deviceStats?.tablet || 0;
+  const deviceTotal = mobileCount + desktopCount + tabletCount || 1;
+  const mobilePct = Math.round((mobileCount / deviceTotal) * 100);
+  const desktopPct = Math.round((desktopCount / deviceTotal) * 100);
+  const tabletPct = Math.round((tabletCount / deviceTotal) * 100);
+
+  // 시간대별 최대 PV (차트 높이 기준)
+  const maxHourlyPv = Math.max(
+    ...Array.from({ length: 24 }).map((_, h) => analyticsData?.hourlyPv?.[String(h)] || 0),
+    1
+  );
 
   // 정렬 아이콘 렌더러
   const renderSortIcon = (field: SortField) => {
