@@ -4,9 +4,9 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ModalProvider } from '@/context/ModalContext';
 
 export const metadata: Metadata = {
-  title: 'With Sinabro (시나브로) - 설치 없는 무료 웹 미니게임 & 시간 때우기',
+  title: '무료 웹 미니게임, 모임 유틸리티 시나브로',
   description:
-    '시간 맞추기, 룰렛 돌리기, 손가락 터치 룰렛, 사다리 타기, 두더지 팡팡, 2048, 슬라이딩 퍼즐, 반사신경 테스트, 한 붓 그리기, 동물 기억력, LED 전광판 등 앱 설치 없이 웹 브라우저에서 1초 만에 즐기는 11종 무료 미니게임 플랫폼!',
+    '앱 설치 없이 1초 만에 바로 즐기는 복불복 내기, 반응속도 대결, 두뇌 퍼즐, 디지털 점수판 및 LED 전광판까지 스마트하게 즐기는 무료 웹 플랫폼입니다.',
   keywords: [
     '미니게임',
     '웹게임',
@@ -47,13 +47,28 @@ export const metadata: Metadata = {
   ],
   metadataBase: new URL('https://ws.ai.kr'),
   openGraph: {
-    title: 'With Sinabro (시나브로) - 설치 없는 무료 웹 미니게임 & 시간 때우기',
+    title: '무료 웹 미니게임, 모임 유틸리티 시나브로',
     description:
-      '설치 없이 브라우저로 바로 즐기는 11종의 무료 웹 미니게임! 밥값 내기, 커피 내기, 킬링타임에 딱 맞는 게임들을 만나보세요.',
+      '앱 설치 없이 1초 만에 바로 즐기는 복불복 내기, 반응속도 대결, 두뇌 퍼즐, 디지털 점수판 및 LED 전광판까지 스마트하게 즐기는 무료 웹 플랫폼입니다.',
     url: 'https://ws.ai.kr',
-    siteName: 'With Sinabro',
+    siteName: '시나브로 (With Sinabro)',
     locale: 'ko_KR',
     type: 'website',
+    images: [
+      {
+        url: 'https://ws.ai.kr/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: '무료 웹 미니게임, 모임 유틸리티 시나브로',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '무료 웹 미니게임, 모임 유틸리티 시나브로',
+    description:
+      '앱 설치 없이 1초 만에 바로 즐기는 복불복 내기, 반응속도 대결, 두뇌 퍼즐, 디지털 점수판 및 LED 전광판까지 스마트하게 즐기는 무료 웹 플랫폼입니다.',
+    images: ['https://ws.ai.kr/og-image.png'],
   },
   other: {
     'google-adsense-account': 'ca-pub-4819204726523615',
