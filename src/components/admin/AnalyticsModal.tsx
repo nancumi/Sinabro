@@ -19,6 +19,7 @@ import {
   ArrowDown,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
 } from 'lucide-react';
 import { DailyAnalytics, ContentAnalytics } from '@/types';
 import {
@@ -686,7 +687,21 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                           >
                             <td className="py-3 px-4 text-center whitespace-nowrap">{medalBadge}</td>
                             <td className="py-3 px-4">
-                              <span className="font-bold text-slate-200">{content.title}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-200">{content.title}</span>
+                                {(content.id === 'job_portal' || content.title.includes('job.ws.ai.kr')) && (
+                                  <a
+                                    href="https://job.ws.ai.kr/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:text-white hover:bg-indigo-500/25 transition-colors cursor-pointer"
+                                    title="job.ws.ai.kr 사이트 새 창 열기"
+                                  >
+                                    <span>바로가기</span>
+                                    <ExternalLink className="w-2.5 h-2.5" />
+                                  </a>
+                                )}
+                              </div>
                             </td>
                             <td className="py-3 px-4 text-right font-semibold text-cyan-400 whitespace-nowrap">
                               {(content.uv || 0).toLocaleString()}명
