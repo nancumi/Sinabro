@@ -103,6 +103,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [analyticsData, setAnalyticsData] = useState<DailyAnalytics | null>(null);
   const [allContents, setAllContents] = useState<ContentAnalytics[]>([]);
+  const [rawDailyList, setRawDailyList] = useState<DailyAnalytics[]>([]);
+  const [chartViewMode, setChartViewMode] = useState<'daily' | 'hourly'>('daily');
 
   // 표 정렬 및 페이지네이션 상태
   const [sortField, setSortField] = useState<SortField>('pv');
@@ -119,6 +121,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
 
   // 복수일자 종합 합산 처리 헬퍼 함수
   const processAnalyticsList = (list: DailyAnalytics[], start: string, end: string) => {
+    setRawDailyList(list);
     if (list.length === 0) {
       setAnalyticsData(null);
       setAllContents([]);
@@ -183,6 +186,12 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
     setStartDate(start);
     setEndDate(end);
     setCurrentPage(1);
+
+    if (preset === 'today' || preset === 'yesterday') {
+      setChartViewMode('hourly');
+    } else {
+      setChartViewMode('daily');
+    }
   };
 
   // 실시간 구독 (모달이 열려 있는 동안 파이어스토어 onSnapshot 실시간 동기화)
@@ -299,6 +308,55 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
     ...Array.from({ length: 24 }).map((_, h) => analyticsData?.hourlyPv?.[String(h)] || 0),
     1
   );
+
+  // 날짜별 방문 트렌드 데이터 생성 (연속된 일자 목록 + 일별 PV/UV 매핑)
+  const dailyTrendData = useMemo(() => {
+    if (!startDate || !endDate) return [];
+
+    const [sY, sM, sD] = startDate.split('-').map(Number);
+    const [eY, eM, eD] = endDate.split('-').map(Number);
+    if (!sY || !sM || !sD || !eY || !eM || !eD) return [];
+
+    const map = new Map<string, DailyAnalytics>();
+    rawDailyList.forEach((item) => {
+      if (item.date) {
+        map.set(item.date, item);
+      }
+    });
+
+    const start = new Date(sY, sM - 1, sD);
+    const end = new Date(eY, eM - 1, eD);
+    const result = [];
+    const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+    const cur = new Date(start);
+    let count = 0;
+    while (cur <= end && count <= 180) {
+      const y = cur.getFullYear();
+      const m = String(cur.getMonth() + 1).padStart(2, '0');
+      const d = String(cur.getDate()).padStart(2, '0');
+      const ymd = `${y}-${m}-${d}`;
+      const found = map.get(ymd);
+
+      result.push({
+        fullDate: ymd,
+        displayDate: `${m}.${d}`,
+        dayOfWeek: DAY_NAMES[cur.getDay()],
+        pv: found?.totalPv || 0,
+        uv: found?.totalUv || 0,
+      });
+
+      cur.setDate(cur.getDate() + 1);
+      count++;
+    }
+
+    return result;
+  }, [rawDailyList, startDate, endDate]);
+
+  // 날짜별 최대 PV (차트 높이 기준)
+  const maxDailyPv = useMemo(() => {
+    return Math.max(...dailyTrendData.map((d) => d.pv), 1);
+  }, [dailyTrendData]);
 
   // 정렬 아이콘 렌더러
   const renderSortIcon = (field: SortField) => {
@@ -711,50 +769,165 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
             )}
           </div>
 
-          {/* C. 24시간 시간대별 유입 차트 & 여유 있는 디바이스 접속 분포 */}
+          {/* C. 날짜별/시간대별 유입 차트 (토글) & 여유 있는 디바이스 접속 분포 */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* 1. 시간대별 접속 분포 차트 (7컬럼) */}
+            {/* 1. 날짜별 / 시간대별 접속 분포 차트 (7컬럼, 토글 지원) */}
             <div className="lg:col-span-7 p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
-                  시간대별 방문 트렌드 (0시 ~ 23시)
+                  {chartViewMode === 'daily' ? (
+                    <>
+                      <Calendar className="w-3.5 h-3.5 text-purple-400" />
+                      날짜별 방문 트렌드
+                    </>
+                  ) : (
+                    <>
+                      <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
+                      시간대별 방문 트렌드 (0시 ~ 23시)
+                    </>
+                  )}
                 </span>
-                <span className="text-[11px] text-slate-500">피크 시간대 분석</span>
-              </div>
-              <div className="h-32 flex items-end gap-1 pt-4 px-1 border-b border-slate-800">
-                {Array.from({ length: 24 }).map((_, h) => {
-                  const hourCount = analyticsData?.hourlyPv?.[String(h)] || 0;
-                  const heightPct = Math.max(4, Math.round((hourCount / maxHourlyPv) * 100));
 
-                  return (
-                    <div
-                      key={h}
-                      className="flex-1 flex flex-col items-center group relative h-full justify-end"
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:inline text-[11px] text-slate-500">
+                    {chartViewMode === 'daily' ? '일자별 추이' : '피크 시간대 분석'}
+                  </span>
+                  <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setChartViewMode('daily')}
+                      className={`px-2.5 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                        chartViewMode === 'daily'
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
                     >
-                      {/* 마우스 호버 툴팁 */}
-                      <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded shadow pointer-events-none z-10 whitespace-nowrap">
-                        {h}시: {hourCount}회
+                      날짜별
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setChartViewMode('hourly')}
+                      className={`px-2.5 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                        chartViewMode === 'hourly'
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      시간대별
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {chartViewMode === 'daily' ? (
+                <div className="space-y-3">
+                  <div className="h-32 flex items-end gap-1 pt-4 px-1 border-b border-slate-800 justify-center">
+                    {dailyTrendData.length === 0 ? (
+                      <div className="flex items-center justify-center w-full h-full text-slate-500 text-xs">
+                        선택된 기간의 일자별 데이터가 없습니다.
                       </div>
-                      <div
-                        style={{ height: `${heightPct}%` }}
-                        className={`w-full rounded-t transition-all ${
-                          hourCount > 0
-                            ? 'bg-gradient-to-t from-cyan-600 to-sky-400 group-hover:from-cyan-400 group-hover:to-sky-300'
-                            : 'bg-slate-800/40'
-                        }`}
-                      />
+                    ) : (
+                      dailyTrendData.map((d) => {
+                        const heightPct = d.pv > 0 ? Math.max(8, Math.round((d.pv / maxDailyPv) * 100)) : 4;
+
+                        return (
+                          <div
+                            key={d.fullDate}
+                            className="flex-1 max-w-[36px] flex flex-col items-center group relative h-full justify-end"
+                          >
+                            {/* 마우스 호버 툴팁 */}
+                            <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 border border-slate-700 text-white text-[10px] px-2.5 py-1.5 rounded-lg shadow-xl pointer-events-none z-20 whitespace-nowrap space-y-0.5">
+                              <div className="font-bold text-slate-200 border-b border-slate-800 pb-0.5">
+                                {d.fullDate} ({d.dayOfWeek})
+                              </div>
+                              <div className="text-purple-300 font-medium">
+                                조회수(PV): <span className="font-bold">{d.pv.toLocaleString()}회</span>
+                              </div>
+                              <div className="text-cyan-300 font-medium">
+                                방문자(UV): <span className="font-bold">{d.uv.toLocaleString()}명</span>
+                              </div>
+                            </div>
+
+                            {/* 바 상단 수치 (일자 수가 14개 이하일 때 표시) */}
+                            {dailyTrendData.length <= 14 && d.pv > 0 && (
+                              <span className="text-[9px] font-bold text-purple-300 mb-1 group-hover:scale-110 transition-transform">
+                                {d.pv}
+                              </span>
+                            )}
+
+                            {/* 바 */}
+                            <div
+                              style={{ height: `${heightPct}%` }}
+                              className={`w-full rounded-t transition-all ${
+                                d.pv > 0
+                                  ? 'bg-gradient-to-t from-purple-600 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-400'
+                                  : 'bg-slate-800/40'
+                              }`}
+                            />
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* X축 날짜 레이블 */}
+                  {dailyTrendData.length > 0 && (
+                    <div className="flex justify-between text-[10px] text-slate-500 px-1 pt-0.5">
+                      {dailyTrendData.length <= 12 ? (
+                        dailyTrendData.map((d) => (
+                          <span key={d.fullDate} className="text-center flex-1 truncate">
+                            {d.displayDate}
+                          </span>
+                        ))
+                      ) : (
+                        <>
+                          <span>{dailyTrendData[0]?.displayDate}</span>
+                          <span>{dailyTrendData[Math.floor(dailyTrendData.length * 0.25)]?.displayDate}</span>
+                          <span>{dailyTrendData[Math.floor(dailyTrendData.length * 0.5)]?.displayDate}</span>
+                          <span>{dailyTrendData[Math.floor(dailyTrendData.length * 0.75)]?.displayDate}</span>
+                          <span>{dailyTrendData[dailyTrendData.length - 1]?.displayDate}</span>
+                        </>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-              <div className="flex justify-between text-[10px] text-slate-500 px-1">
-                <span>00시</span>
-                <span>06시</span>
-                <span>12시</span>
-                <span>18시</span>
-                <span>23시</span>
-              </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="h-32 flex items-end gap-1 pt-4 px-1 border-b border-slate-800">
+                    {Array.from({ length: 24 }).map((_, h) => {
+                      const hourCount = analyticsData?.hourlyPv?.[String(h)] || 0;
+                      const heightPct = Math.max(4, Math.round((hourCount / maxHourlyPv) * 100));
+
+                      return (
+                        <div
+                          key={h}
+                          className="flex-1 flex flex-col items-center group relative h-full justify-end"
+                        >
+                          {/* 마우스 호버 툴팁 */}
+                          <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded shadow pointer-events-none z-10 whitespace-nowrap">
+                            {h}시: {hourCount}회
+                          </div>
+                          <div
+                            style={{ height: `${heightPct}%` }}
+                            className={`w-full rounded-t transition-all ${
+                              hourCount > 0
+                                ? 'bg-gradient-to-t from-cyan-600 to-sky-400 group-hover:from-cyan-400 group-hover:to-sky-300'
+                                : 'bg-slate-800/40'
+                            }`}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-between text-[10px] text-slate-500 px-1">
+                    <span>00시</span>
+                    <span>06시</span>
+                    <span>12시</span>
+                    <span>18시</span>
+                    <span>23시</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 2. 접속 기기(디바이스) 분포 (5컬럼 - 여유 있고 쾌적한 레이아웃) */}
