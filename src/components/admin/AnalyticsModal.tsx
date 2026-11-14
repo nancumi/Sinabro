@@ -105,7 +105,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
   const [analyticsData, setAnalyticsData] = useState<DailyAnalytics | null>(null);
   const [allContents, setAllContents] = useState<ContentAnalytics[]>([]);
   const [rawDailyList, setRawDailyList] = useState<DailyAnalytics[]>([]);
-  const [chartViewMode, setChartViewMode] = useState<'daily' | 'hourly'>('daily');
+  const [chartViewMode, setChartViewMode] = useState<'daily' | 'hourly'>('hourly');
 
   // 표 정렬 및 페이지네이션 상태
   const [sortField, setSortField] = useState<SortField>('pv');
@@ -158,15 +158,20 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
     list.forEach((day) => {
       if (day.contents) {
         Object.values(day.contents).forEach((c) => {
+          if (!c || !c.id) return;
+          const safeTitle = c.title || mergedContents[c.id]?.title || c.id || '알 수 없음';
           if (!mergedContents[c.id]) {
             mergedContents[c.id] = {
               id: c.id,
-              title: c.title,
+              title: safeTitle,
               pv: c.pv || 0,
               uv: c.uv || 0,
               totalDwellSeconds: c.totalDwellSeconds || 0,
             };
           } else {
+            if (c.title) {
+              mergedContents[c.id].title = c.title;
+            }
             mergedContents[c.id].pv += c.pv || 0;
             mergedContents[c.id].uv += c.uv || 0;
             mergedContents[c.id].totalDwellSeconds += c.totalDwellSeconds || 0;
@@ -249,8 +254,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
 
       switch (sortField) {
         case 'title':
-          valA = a.title;
-          valB = b.title;
+          valA = a.title || a.id || '';
+          valB = b.title || b.id || '';
           return sortDirection === 'asc'
             ? String(valA).localeCompare(String(valB))
             : String(valB).localeCompare(String(valA));
@@ -688,8 +693,10 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                             <td className="py-3 px-4 text-center whitespace-nowrap">{medalBadge}</td>
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-200">{content.title}</span>
-                                {(content.id === 'job_portal' || content.title.includes('job.ws.ai.kr')) && (
+                                <span className="font-bold text-slate-200">
+                                  {content.title || content.id || '알 수 없음'}
+                                </span>
+                                {(content.id === 'job_portal' || (typeof content.title === 'string' && content.title.includes('job.ws.ai.kr'))) && (
                                   <a
                                     href="https://job.ws.ai.kr/"
                                     target="_blank"
@@ -856,10 +863,10 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                                 {d.fullDate} ({d.dayOfWeek})
                               </div>
                               <div className="text-purple-300 font-medium">
-                                조회수(PV): <span className="font-bold">{d.pv.toLocaleString()}회</span>
+                                조회수(PV): <span className="font-bold">{(d.pv || 0).toLocaleString()}회</span>
                               </div>
                               <div className="text-cyan-300 font-medium">
-                                방문자(UV): <span className="font-bold">{d.uv.toLocaleString()}명</span>
+                                방문자(UV): <span className="font-bold">{(d.uv || 0).toLocaleString()}명</span>
                               </div>
                             </div>
 
