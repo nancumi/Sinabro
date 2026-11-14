@@ -11,6 +11,17 @@ import {
 
 const ADMIN_EMAIL = 'jiyulain@gmail.com';
 
+const setAdminSubdomainCookie = (enabled: boolean) => {
+  if (typeof document === 'undefined') return;
+  if (enabled) {
+    document.cookie = 'sinabro_admin=1; domain=.ws.ai.kr; path=/; max-age=31536000; SameSite=Lax';
+    document.cookie = 'sinabro_admin=1; path=/; max-age=31536000; SameSite=Lax';
+  } else {
+    document.cookie = 'sinabro_admin=; domain=.ws.ai.kr; path=/; max-age=0; SameSite=Lax';
+    document.cookie = 'sinabro_admin=; path=/; max-age=0; SameSite=Lax';
+  }
+};
+
 interface AuthContextType {
   isAdmin: boolean;
   isAuthLoading: boolean;
@@ -40,6 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAdmin(hasAdminRole);
         if (hasAdminRole) {
           localStorage.setItem('sinabro_admin_session', ADMIN_EMAIL);
+          setAdminSubdomainCookie(true);
         }
       } else {
         setUser(null);
@@ -48,6 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (saved === ADMIN_EMAIL) {
           setIsAdmin(true);
           setCurrentUserEmail(ADMIN_EMAIL);
+          setAdminSubdomainCookie(true);
         } else {
           setIsAdmin(false);
           setCurrentUserEmail(null);
@@ -61,6 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const params = new URLSearchParams(window.location.search);
       if (params.get('admin') === 'true') {
         localStorage.setItem('sinabro_admin_session', ADMIN_EMAIL);
+        setAdminSubdomainCookie(true);
         setIsAdmin(true);
         setCurrentUserEmail(ADMIN_EMAIL);
       }
@@ -76,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (result.user.email === ADMIN_EMAIL) {
         setIsAdmin(true);
         localStorage.setItem('sinabro_admin_session', ADMIN_EMAIL);
+        setAdminSubdomainCookie(true);
       }
     } catch (error) {
       console.error('Firebase Google Sign-in error:', error);
@@ -87,6 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await signOut(auth);
       localStorage.removeItem('sinabro_admin_session');
+      setAdminSubdomainCookie(false);
       setIsAdmin(false);
       setCurrentUserEmail(null);
       setUser(null);

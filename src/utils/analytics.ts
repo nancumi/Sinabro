@@ -24,6 +24,9 @@ export const isAdminUserSession = (): boolean => {
     if (localStorage.getItem('sinabro_admin_session') === ADMIN_EMAIL) {
       return true;
     }
+    if (typeof document !== 'undefined' && document.cookie.includes('sinabro_admin=1')) {
+      return true;
+    }
     if (auth.currentUser?.email === ADMIN_EMAIL) {
       return true;
     }
@@ -170,8 +173,8 @@ export const trackContentView = async (content: ContentItem): Promise<void> => {
 export const trackContentDwellTime = async (contentId: string, seconds: number): Promise<void> => {
   if (typeof window === 'undefined' || !contentId || seconds <= 0 || isAdminUserSession()) return;
 
-  // 비정상적인 장기 유휴 시간(4시간 초과) 방지
-  const safeSeconds = Math.min(seconds, 14400);
+  // 비정상적인 장기 유휴 시간(단일 세션 10분 초과) 방지
+  const safeSeconds = Math.min(seconds, 600);
 
   try {
     const today = getTodayString();

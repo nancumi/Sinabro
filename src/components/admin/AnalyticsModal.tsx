@@ -160,21 +160,24 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
         Object.values(day.contents).forEach((c) => {
           if (!c || !c.id) return;
           const safeTitle = c.title || mergedContents[c.id]?.title || c.id || '알 수 없음';
+          const pv = c.pv || 0;
+          // 1회 방문당 최대 10분(600초)을 초과하는 비정상 방치 기록 자동 보정
+          const safeDwell = Math.min(c.totalDwellSeconds || 0, Math.max(pv, 1) * 600);
           if (!mergedContents[c.id]) {
             mergedContents[c.id] = {
               id: c.id,
               title: safeTitle,
-              pv: c.pv || 0,
+              pv,
               uv: c.uv || 0,
-              totalDwellSeconds: c.totalDwellSeconds || 0,
+              totalDwellSeconds: safeDwell,
             };
           } else {
             if (c.title) {
               mergedContents[c.id].title = c.title;
             }
-            mergedContents[c.id].pv += c.pv || 0;
+            mergedContents[c.id].pv += pv;
             mergedContents[c.id].uv += c.uv || 0;
-            mergedContents[c.id].totalDwellSeconds += c.totalDwellSeconds || 0;
+            mergedContents[c.id].totalDwellSeconds += safeDwell;
           }
         });
       }
@@ -348,7 +351,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
 
   // 총 체류 시간 및 평균 체류 시간 계산
   const totalDwellAll = allContents.reduce((acc, c) => acc + (c.totalDwellSeconds || 0), 0);
-  const avgDwellAll = totalPv > 0 ? Math.round(totalDwellAll / totalPv) : 0;
+  const totalContentPv = allContents.reduce((acc, c) => acc + (c.pv || 0), 0);
+  const effectivePvForDwell = Math.max(totalPv, totalContentPv);
+  const avgDwellAll = effectivePvForDwell > 0 ? Math.round(totalDwellAll / effectivePvForDwell) : 0;
 
   // 디바이스 비율
   const mobileCount = analyticsData?.deviceStats?.mobile || 0;

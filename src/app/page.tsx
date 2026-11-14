@@ -154,7 +154,7 @@ export default function HomePage() {
     }
   }, [isAuthLoading, isAdmin]);
 
-  // 3. 사용자가 게임을 직접 클릭하여 시작했을 때만 방문(PV/UV) 및 머문 시간 추적 (관리자는 완전 제외)
+  // 3. 사용자가 게임을 직접 클릭하여 시작했을 때만 방문(PV/UV) 및 실제 활성 머문 시간 추적 (관리자 제외 + 백그라운드/유휴 시간 차단 + 중복 전송 방지)
   useEffect(() => {
     if (!selectedContent || isAuthLoading) return;
 
@@ -164,49 +164,53 @@ export default function HomePage() {
       return;
     }
 
-    // A. 이전 콘텐츠 체류 시간 정산
-    if (activeContentRef.current) {
-      const prevId = activeContentRef.current.id;
-      const elapsed = Math.round((Date.now() - activeContentRef.current.startTime) / 1000);
-      if (elapsed > 0) {
-        trackContentDwellTime(prevId, elapsed);
-      }
-    }
+    const contentId = selectedContent.id;
 
-    // B. 새 콘텐츠 접속 기록 (PV / UV)
+    // A. 새 콘텐츠 접속 기록 (PV / UV)
     trackContentView(selectedContent);
 
-    // C. 새 타이머 시작
-    activeContentRef.current = {
-      id: selectedContent.id,
-      startTime: Date.now(),
+    // B. 실제 활성 체류 시간(Active Dwell Time) 1초 단위 측정 (탭이 화면에 보이고 최근 60초 이내 사용자 입력이 있을 때만 카운트)
+    let activeSeconds = 0;
+    let lastInteractionTime = Date.now();
+    let flushed = false;
+
+    const updateInteraction = () => {
+      lastInteractionTime = Date.now();
     };
 
-    // D. 창 닫기 / 새로고침 시 최종 체류 시간 전송 (관리자 전환 시 미전송)
-    const handleBeforeUnload = () => {
+    const tickInterval = window.setInterval(() => {
       if (isAdminRef.current || isAdminUserSession()) return;
-      if (activeContentRef.current) {
-        const elapsed = Math.round((Date.now() - activeContentRef.current.startTime) / 1000);
-        if (elapsed > 0) {
-          trackContentDwellTime(activeContentRef.current.id, elapsed);
-        }
+      const isVisible = document.visibilityState === 'visible';
+      const isRecentlyActive = Date.now() - lastInteractionTime < 60000;
+      if (isVisible && isRecentlyActive && activeSeconds < 600) {
+        activeSeconds += 1;
+      }
+    }, 1000);
+
+    const flushActiveDwell = () => {
+      if (flushed) return;
+      flushed = true;
+      if (isAdminRef.current || isAdminUserSession()) return;
+      if (activeSeconds > 0) {
+        trackContentDwellTime(contentId, activeSeconds);
+        activeSeconds = 0;
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pointerdown', updateInteraction, { passive: true });
+    window.addEventListener('pointermove', updateInteraction, { passive: true });
+    window.addEventListener('keydown', updateInteraction, { passive: true });
+    window.addEventListener('scroll', updateInteraction, { passive: true });
+    window.addEventListener('beforeunload', flushActiveDwell);
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (isAdminRef.current || isAdminUserSession()) {
-        activeContentRef.current = null;
-        return;
-      }
-      if (activeContentRef.current && activeContentRef.current.id === selectedContent.id) {
-        const elapsed = Math.round((Date.now() - activeContentRef.current.startTime) / 1000);
-        if (elapsed > 0) {
-          trackContentDwellTime(activeContentRef.current.id, elapsed);
-        }
-      }
+      window.clearInterval(tickInterval);
+      window.removeEventListener('pointerdown', updateInteraction);
+      window.removeEventListener('pointermove', updateInteraction);
+      window.removeEventListener('keydown', updateInteraction);
+      window.removeEventListener('scroll', updateInteraction);
+      window.removeEventListener('beforeunload', flushActiveDwell);
+      flushActiveDwell();
     };
   }, [selectedContent?.id, isAdmin, isAuthLoading]);
 
