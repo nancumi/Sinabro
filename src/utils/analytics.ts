@@ -129,18 +129,21 @@ export const trackSiteVisit = async (): Promise<void> => {
 };
 
 /**
- * 2. 개별 콘텐츠/게임 접속(PV / UV) 기록
+ * 2. 개별 콘텐츠/게임 접속(PV / UV) 및 방문자별 내역 기록
  */
 export const trackContentView = async (content: ContentItem): Promise<void> => {
   if (typeof window === 'undefined' || !content?.id || isAdminUserSession()) return;
 
   try {
     const today = getTodayString();
+    const visitorId = getOrCreateVisitorId();
+    const device = detectDeviceType();
     const contentUvKey = `sinabro_content_uv_${today}_${content.id}`;
-    const isNewContentUv = !sessionStorage.getItem(contentUvKey);
+    const isNewContentUv = !sessionStorage.getItem(contentUvKey) && !localStorage.getItem(contentUvKey);
 
     if (isNewContentUv) {
       sessionStorage.setItem(contentUvKey, '1');
+      localStorage.setItem(contentUvKey, '1');
     }
 
     const docRef = doc(db, ANALYTICS_COLLECTION, today);
@@ -156,6 +159,16 @@ export const trackContentView = async (content: ContentItem): Promise<void> => {
             pv: increment(1),
             ...(isNewContentUv ? { uv: increment(1) } : {}),
             totalDwellSeconds: increment(0),
+            visitors: {
+              [visitorId]: {
+                visitorId,
+                device,
+                visits: increment(1),
+                dwellSeconds: increment(0),
+                lastVisitedAt: Date.now(),
+                date: today,
+              },
+            },
           },
         },
         updatedAt: Date.now(),
@@ -168,7 +181,7 @@ export const trackContentView = async (content: ContentItem): Promise<void> => {
 };
 
 /**
- * 3. 개별 콘텐츠 체류 시간(머문 시간) 기록 (초 단위)
+ * 3. 개별 콘텐츠 체류 시간(머문 시간) 및 방문자별 체류 시간 기록 (초 단위)
  */
 export const trackContentDwellTime = async (contentId: string, seconds: number): Promise<void> => {
   if (typeof window === 'undefined' || !contentId || seconds <= 0 || isAdminUserSession()) return;
@@ -178,6 +191,8 @@ export const trackContentDwellTime = async (contentId: string, seconds: number):
 
   try {
     const today = getTodayString();
+    const visitorId = getOrCreateVisitorId();
+    const device = detectDeviceType();
     const docRef = doc(db, ANALYTICS_COLLECTION, today);
 
     await setDoc(
@@ -186,6 +201,15 @@ export const trackContentDwellTime = async (contentId: string, seconds: number):
         contents: {
           [contentId]: {
             totalDwellSeconds: increment(safeSeconds),
+            visitors: {
+              [visitorId]: {
+                visitorId,
+                device,
+                dwellSeconds: increment(safeSeconds),
+                lastVisitedAt: Date.now(),
+                date: today,
+              },
+            },
           },
         },
         updatedAt: Date.now(),

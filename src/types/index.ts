@@ -22,12 +22,22 @@ export interface AdConfig {
   bottomSlotId: string;
 }
 
+export interface ContentVisitorDetail {
+  visitorId: string;
+  device?: 'mobile' | 'desktop' | 'tablet';
+  visits: number;            // 해당 방문자의 방문 횟수 (PV)
+  dwellSeconds: number;      // 해당 방문자의 체류 시간 (초 단위)
+  lastVisitedAt?: number;    // 마지막 방문 시각 (timestamp)
+  date?: string;             // 방문 일자 ('YYYY-MM-DD')
+}
+
 export interface ContentAnalytics {
   id: string;
   title: string;
   pv: number;               // 중복 방문 수 (Page Views)
   uv: number;               // 순수 방문자 수 (Unique Visitors)
   totalDwellSeconds: number; // 총 체류 시간 (초 단위)
+  visitors?: Record<string, ContentVisitorDetail>; // 방문자별 세부 내역
 }
 
 export interface DailyAnalytics {
