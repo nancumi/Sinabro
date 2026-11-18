@@ -169,31 +169,41 @@ export default function HomePage() {
     // A. 새 콘텐츠 접속 기록 (PV / UV)
     trackContentView(selectedContent);
 
-    // B. 실제 활성 체류 시간(Active Dwell Time) 1초 단위 측정 (탭이 화면에 보이고 최근 60초 이내 사용자 입력이 있을 때만 카운트)
-    let activeSeconds = 0;
+    // B. 실제 활성 체류 시간(Active Dwell Time) 1초 단위 측정 + 3초 주기 실시간 동기화
+    let unflushedSeconds = 0;
+    let totalSessionSeconds = 0;
     let lastInteractionTime = Date.now();
-    let flushed = false;
 
     const updateInteraction = () => {
       lastInteractionTime = Date.now();
+    };
+
+    const flushActiveDwell = () => {
+      if (isAdminRef.current || isAdminUserSession() || unflushedSeconds <= 0) return;
+      const toSend = unflushedSeconds;
+      unflushedSeconds = 0;
+      trackContentDwellTime(contentId, toSend);
     };
 
     const tickInterval = window.setInterval(() => {
       if (isAdminRef.current || isAdminUserSession()) return;
       const isVisible = document.visibilityState === 'visible';
       const isRecentlyActive = Date.now() - lastInteractionTime < 60000;
-      if (isVisible && isRecentlyActive && activeSeconds < 600) {
-        activeSeconds += 1;
+      if (isVisible && isRecentlyActive && totalSessionSeconds < 600) {
+        unflushedSeconds += 1;
+        totalSessionSeconds += 1;
+        // 3초마다 실시간으로 Firestore에 반영하여 창을 갑자기 닫아도 체류 시간이 유실되지 않게 보장
+        if (unflushedSeconds >= 3) {
+          flushActiveDwell();
+        }
       }
     }, 1000);
 
-    const flushActiveDwell = () => {
-      if (flushed) return;
-      flushed = true;
-      if (isAdminRef.current || isAdminUserSession()) return;
-      if (activeSeconds > 0) {
-        trackContentDwellTime(contentId, activeSeconds);
-        activeSeconds = 0;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flushActiveDwell();
+      } else {
+        lastInteractionTime = Date.now();
       }
     };
 
@@ -201,6 +211,8 @@ export default function HomePage() {
     window.addEventListener('pointermove', updateInteraction, { passive: true });
     window.addEventListener('keydown', updateInteraction, { passive: true });
     window.addEventListener('scroll', updateInteraction, { passive: true });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', flushActiveDwell);
     window.addEventListener('beforeunload', flushActiveDwell);
 
     return () => {
@@ -209,6 +221,8 @@ export default function HomePage() {
       window.removeEventListener('pointermove', updateInteraction);
       window.removeEventListener('keydown', updateInteraction);
       window.removeEventListener('scroll', updateInteraction);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', flushActiveDwell);
       window.removeEventListener('beforeunload', flushActiveDwell);
       flushActiveDwell();
     };

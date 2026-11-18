@@ -81,6 +81,49 @@ export const detectDeviceType = (): 'mobile' | 'desktop' | 'tablet' => {
   return isMobile ? 'mobile' : 'desktop';
 };
 
+// 유입 직전 이전 URL(Referrer) 판별 및 세션 보존
+export const detectReferrerSource = (): string => {
+  if (typeof window === 'undefined') return '직접 접속';
+  const REF_SESSION_KEY = 'sinabro_initial_referrer';
+  try {
+    const cached = sessionStorage.getItem(REF_SESSION_KEY);
+    if (cached) return cached;
+
+    let detected = '';
+    const params = new URLSearchParams(window.location.search);
+    const utmSource = params.get('utm_source') || params.get('ref') || params.get('from');
+    if (utmSource) {
+      detected = utmSource;
+    } else if (document.referrer) {
+      try {
+        const refUrl = new URL(document.referrer);
+        if (refUrl.hostname !== window.location.hostname) {
+          detected =
+            refUrl.hostname +
+            (refUrl.pathname && refUrl.pathname !== '/' ? refUrl.pathname : '');
+        }
+      } catch {
+        detected = document.referrer;
+      }
+    }
+
+    if (!detected) {
+      const ua = navigator.userAgent || '';
+      if (/KAKAOTALK/i.test(ua)) detected = '카카오톡 공유';
+      else if (/Instagram/i.test(ua)) detected = 'instagram.com';
+      else if (/NAVER\(inapp/i.test(ua)) detected = 'naver.com (앱)';
+      else if (/FBAN|FBAV/i.test(ua)) detected = 'facebook.com';
+      else if (/Threads/i.test(ua)) detected = 'threads.net';
+      else detected = '직접 접속 (Direct)';
+    }
+
+    sessionStorage.setItem(REF_SESSION_KEY, detected);
+    return detected;
+  } catch {
+    return '직접 접속 (Direct)';
+  }
+};
+
 /**
  * 1. 사이트 전체 접속(PV / UV) 기록
  */
@@ -138,6 +181,7 @@ export const trackContentView = async (content: ContentItem): Promise<void> => {
     const today = getTodayString();
     const visitorId = getOrCreateVisitorId();
     const device = detectDeviceType();
+    const referrer = detectReferrerSource();
     const contentUvKey = `sinabro_content_uv_${today}_${content.id}`;
     const isNewContentUv = !sessionStorage.getItem(contentUvKey) && !localStorage.getItem(contentUvKey);
 
@@ -158,13 +202,14 @@ export const trackContentView = async (content: ContentItem): Promise<void> => {
             title: content.title,
             pv: increment(1),
             ...(isNewContentUv ? { uv: increment(1) } : {}),
-            totalDwellSeconds: increment(0),
+            totalDwellSeconds: increment(1),
             visitors: {
               [visitorId]: {
                 visitorId,
                 device,
+                referrer,
                 visits: increment(1),
-                dwellSeconds: increment(0),
+                dwellSeconds: increment(1),
                 lastVisitedAt: Date.now(),
                 date: today,
               },
@@ -193,6 +238,7 @@ export const trackContentDwellTime = async (contentId: string, seconds: number):
     const today = getTodayString();
     const visitorId = getOrCreateVisitorId();
     const device = detectDeviceType();
+    const referrer = detectReferrerSource();
     const docRef = doc(db, ANALYTICS_COLLECTION, today);
 
     await setDoc(
@@ -205,6 +251,7 @@ export const trackContentDwellTime = async (contentId: string, seconds: number):
               [visitorId]: {
                 visitorId,
                 device,
+                referrer,
                 dwellSeconds: increment(safeSeconds),
                 lastVisitedAt: Date.now(),
                 date: today,

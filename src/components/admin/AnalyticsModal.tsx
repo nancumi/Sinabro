@@ -216,19 +216,22 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
           let accountedUv = 0;
           let accountedPv = 0;
           let accountedDwell = 0;
+          const dayCompositeKeys: string[] = [];
 
           if (c.visitors && typeof c.visitors === 'object') {
             Object.entries(c.visitors).forEach(([vKey, v]) => {
               if (!v) return;
               const compositeKey = `${day.date}_${v.visitorId || vKey}`;
               const vVisits = Math.max(1, v.visits || 1);
-              const vDwell = Math.min(v.dwellSeconds || 0, vVisits * 600);
+              const vDwell = Math.max(vVisits, Math.min(v.dwellSeconds || 0, vVisits * 600));
               accountedUv += 1;
               accountedPv += vVisits;
               accountedDwell += vDwell;
+              dayCompositeKeys.push(compositeKey);
               targetVisitors[compositeKey] = {
                 visitorId: v.visitorId || vKey,
                 device: v.device || 'desktop',
+                referrer: v.referrer || '직접 접속 (Direct)',
                 visits: vVisits,
                 dwellSeconds: vDwell,
                 lastVisitedAt: v.lastVisitedAt || day.updatedAt || Date.now(),
@@ -237,30 +240,47 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
             });
           }
 
-          // 일자별 UV보다 상세 방문자 기록 수가 부족할 경우 누락분 보완
+          // 일자별 총 체류 시간이 방문자 합보다 큰 경우 방문자들에게 분배
           const remUv = Math.max(0, uv - accountedUv);
           const remPv = Math.max(remUv, pv - accountedPv);
           const remDwell = Math.max(0, safeDwell - accountedDwell);
           if (remUv > 0) {
             for (let i = 0; i < remUv; i++) {
               const fallbackKey = `${day.date}_anon_${i + 1}`;
-              const vVisits = i === 0 ? remPv - (remUv - 1) : 1;
-              const vDwell =
+              const vVisits = Math.max(1, i === 0 ? remPv - (remUv - 1) : 1);
+              const rawDwell =
                 i === remUv - 1
                   ? Math.max(0, remDwell - Math.round(remDwell / remUv) * (remUv - 1))
                   : Math.round(remDwell / remUv);
+              const vDwell = Math.max(vVisits, rawDwell);
+              accountedDwell += vDwell;
               targetVisitors[fallbackKey] = {
                 visitorId: `v_${day.date.replace(/-/g, '')}_${i + 1}`,
                 device:
                   (day.deviceStats?.mobile || 0) > (day.deviceStats?.desktop || 0)
                     ? 'mobile'
                     : 'desktop',
-                visits: Math.max(1, vVisits),
-                dwellSeconds: Math.max(0, vDwell),
+                referrer: '직접 접속 (Direct)',
+                visits: vVisits,
+                dwellSeconds: vDwell,
                 lastVisitedAt: day.updatedAt || Date.now(),
                 date: day.date,
               };
             }
+          } else if (remDwell > 0 && dayCompositeKeys.length > 0) {
+            const addPerVisitor = Math.floor(remDwell / dayCompositeKeys.length);
+            dayCompositeKeys.forEach((k, idx) => {
+              const extra =
+                idx === dayCompositeKeys.length - 1
+                  ? remDwell - addPerVisitor * (dayCompositeKeys.length - 1)
+                  : addPerVisitor;
+              targetVisitors[k].dwellSeconds += Math.max(0, extra);
+              accountedDwell += Math.max(0, extra);
+            });
+          }
+
+          if (accountedDwell > mergedContents[c.id].totalDwellSeconds) {
+            mergedContents[c.id].totalDwellSeconds = accountedDwell;
           }
         });
       }
@@ -1027,6 +1047,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                             <th className="py-2.5 px-4 w-16 text-center whitespace-nowrap">번호</th>
                             <th className="py-2.5 px-4 whitespace-nowrap">방문자 식별 ID</th>
                             <th className="py-2.5 px-4 whitespace-nowrap">접속 기기</th>
+                            <th className="py-2.5 px-4 whitespace-nowrap">이전 URL</th>
                             <th
                               onClick={() => handleVisitorSort('time')}
                               className="py-2.5 px-4 cursor-pointer hover:text-white transition-colors whitespace-nowrap"
@@ -1043,7 +1064,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                               onClick={() => handleVisitorSort('dwell')}
                               className="py-2.5 px-4 text-right cursor-pointer hover:text-white transition-colors whitespace-nowrap"
                             >
-                              사용자 페이지 머문 시간 {visitorSortField === 'dwell' ? (visitorSortDir === 'asc' ? '↑' : '↓') : '↕'}
+                              체류 시간 {visitorSortField === 'dwell' ? (visitorSortDir === 'asc' ? '↑' : '↓') : '↕'}
                             </th>
                             <th className="py-2.5 px-4 text-right whitespace-nowrap">회당 평균</th>
                             <th className="py-2.5 px-4 w-32 text-center whitespace-nowrap">체류 비중</th>
@@ -1052,17 +1073,15 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                         <tbody className="divide-y divide-slate-800/60">
                           {paginatedVisitors.map((v, vIdx) => {
                             const rowNum = (visitorPage - 1) * VISITOR_PAGE_SIZE + vIdx + 1;
+                            const safeDwellSec = Math.max(1, v.dwellSeconds || 0);
+                            const safeVisitsCount = Math.max(1, v.visits || 1);
                             const maxVisitorDwell = Math.max(
-                              ...sortedVisitors.map((item) => item.dwellSeconds || 0),
+                              ...sortedVisitors.map((item) => Math.max(1, item.dwellSeconds || 0)),
                               1
                             );
-                            const dwellPct = Math.round(
-                              ((v.dwellSeconds || 0) / maxVisitorDwell) * 100
-                            );
-                            const avgPerVisit =
-                              (v.visits || 1) > 0
-                                ? Math.round((v.dwellSeconds || 0) / (v.visits || 1))
-                                : 0;
+                            const dwellPct = Math.round((safeDwellSec / maxVisitorDwell) * 100);
+                            const avgPerVisit = Math.max(1, Math.round(safeDwellSec / safeVisitsCount));
+                            const refText = v.referrer || '직접 접속 (Direct)';
 
                             return (
                               <tr
@@ -1073,14 +1092,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                                   #{rowNum}
                                 </td>
                                 <td className="py-2.5 px-4 whitespace-nowrap">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-bold text-slate-200">
-                                      {formatVisitorLabel(v.visitorId, rowNum - 1)}
-                                    </span>
-                                    <span className="text-[10px] text-slate-500 font-mono">
-                                      ({v.date || startDate})
-                                    </span>
-                                  </div>
+                                  <span className="font-bold text-slate-200">
+                                    {formatVisitorLabel(v.visitorId, rowNum - 1)}
+                                  </span>
                                 </td>
                                 <td className="py-2.5 px-4 whitespace-nowrap">
                                   {v.device === 'mobile' ? (
@@ -1097,16 +1111,24 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                                     </span>
                                   )}
                                 </td>
+                                <td className="py-2.5 px-4 whitespace-nowrap">
+                                  <span
+                                    className="inline-block max-w-[200px] truncate px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700/70 text-slate-300 text-[11px] font-medium"
+                                    title={refText}
+                                  >
+                                    {refText}
+                                  </span>
+                                </td>
                                 <td className="py-2.5 px-4 text-slate-300 whitespace-nowrap">
                                   {formatVisitTimestamp(v.lastVisitedAt, v.date)}
                                 </td>
                                 <td className="py-2.5 px-4 text-right font-bold text-purple-300 whitespace-nowrap">
-                                  {(v.visits || 1).toLocaleString()}회
+                                  {safeVisitsCount.toLocaleString()}회
                                 </td>
                                 <td className="py-2.5 px-4 text-right font-black text-amber-300 whitespace-nowrap">
-                                  {formatSeconds(v.dwellSeconds || 0)}
+                                  {formatSeconds(safeDwellSec)}
                                 </td>
-                                <td className="py-2.5 px-4 text-right text-slate-400 whitespace-nowrap">
+                                <td className="py-2.5 px-4 text-right font-semibold text-sky-300 whitespace-nowrap">
                                   {formatSeconds(avgPerVisit)}
                                 </td>
                                 <td className="py-2.5 px-4">

@@ -25,6 +25,7 @@ export interface AdConfig {
 export interface ContentVisitorDetail {
   visitorId: string;
   device?: 'mobile' | 'desktop' | 'tablet';
+  referrer?: string;         // 유입 직전 이전 URL 또는 유입 경로
   visits: number;            // 해당 방문자의 방문 횟수 (PV)
   dwellSeconds: number;      // 해당 방문자의 체류 시간 (초 단위)
   lastVisitedAt?: number;    // 마지막 방문 시각 (timestamp)
