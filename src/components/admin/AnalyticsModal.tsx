@@ -351,40 +351,63 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
     setCurrentPage(1);
   };
 
-  // 정렬된 콘텐츠 목록 계산
+  // 정렬된 콘텐츠 목록 계산 (동점 시 1순위: PV -> 2순위: UV -> 3순위: 총 체류 시간 -> 4순위: 평균 머문 시간 다단계 판정)
   const sortedContents = useMemo(() => {
     const list = [...allContents];
     list.sort((a, b) => {
-      let valA: number | string = 0;
-      let valB: number | string = 0;
+      const pvA = a.pv || 0;
+      const pvB = b.pv || 0;
+      const uvA = a.uv || 0;
+      const uvB = b.uv || 0;
+      const totalDwellA = a.totalDwellSeconds || 0;
+      const totalDwellB = b.totalDwellSeconds || 0;
+      const avgDwellA = pvA > 0 ? totalDwellA / pvA : 0;
+      const avgDwellB = pvB > 0 ? totalDwellB / pvB : 0;
+      const titleA = a.title || a.id || '';
+      const titleB = b.title || b.id || '';
+
+      if (sortField === 'title') {
+        const titleCmp =
+          sortDirection === 'asc'
+            ? String(titleA).localeCompare(String(titleB))
+            : String(titleB).localeCompare(String(titleA));
+        if (titleCmp !== 0) return titleCmp;
+      }
+
+      let valA = pvA;
+      let valB = pvB;
 
       switch (sortField) {
-        case 'title':
-          valA = a.title || a.id || '';
-          valB = b.title || b.id || '';
-          return sortDirection === 'asc'
-            ? String(valA).localeCompare(String(valB))
-            : String(valB).localeCompare(String(valA));
         case 'uv':
-          valA = a.uv || 0;
-          valB = b.uv || 0;
+          valA = uvA;
+          valB = uvB;
           break;
         case 'avgDwell':
-          valA = a.pv > 0 ? (a.totalDwellSeconds || 0) / a.pv : 0;
-          valB = b.pv > 0 ? (b.totalDwellSeconds || 0) / b.pv : 0;
+          valA = avgDwellA;
+          valB = avgDwellB;
           break;
         case 'totalDwell':
-          valA = a.totalDwellSeconds || 0;
-          valB = b.totalDwellSeconds || 0;
+          valA = totalDwellA;
+          valB = totalDwellB;
           break;
         case 'pv':
         default:
-          valA = a.pv || 0;
-          valB = b.pv || 0;
+          valA = pvA;
+          valB = pvB;
           break;
       }
 
-      return sortDirection === 'asc' ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
+      const dirMultiplier = sortDirection === 'asc' ? 1 : -1;
+      const primaryDiff = (valA - valB) * dirMultiplier;
+      if (primaryDiff !== 0) return primaryDiff;
+
+      // 동점자 다단계 우선순위 (PV -> UV -> 총 체류 시간 -> 평균 머문 시간 -> 이름순)
+      if (pvA !== pvB) return (pvA - pvB) * dirMultiplier;
+      if (uvA !== uvB) return (uvA - uvB) * dirMultiplier;
+      if (totalDwellA !== totalDwellB) return (totalDwellA - totalDwellB) * dirMultiplier;
+      if (avgDwellA !== avgDwellB) return (avgDwellA - avgDwellB) * dirMultiplier;
+
+      return String(titleA).localeCompare(String(titleB));
     });
     return list;
   }, [allContents, sortField, sortDirection]);
