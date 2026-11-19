@@ -76,6 +76,40 @@ const formatVisitTimestamp = (ts?: number, dateStr?: string): string => {
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
 };
 
+// 유입 직전 이전 URL(Referrer) 뱃지 스타일 헬퍼
+// 직접 접속은 기존 어두운 슬레이트 뱃지 유지, 그 외 외부 유입은 색상별로 구분
+const getReferrerBadgeStyle = (referrer?: string): string => {
+  const ref = (referrer || '').toLowerCase().trim();
+
+  // 1. 직접 접속: 기존 슬레이트 다크 뱃지 그대로 유지
+  if (!ref || ref.includes('직접 접속') || ref.includes('direct')) {
+    return 'bg-slate-800/80 border border-slate-700/70 text-slate-300 font-medium';
+  }
+
+  // 2. 검색 포털 및 외부 주요 플랫폼별 색상 구분
+  if (ref.includes('google')) {
+    return 'bg-sky-500/15 border border-sky-500/35 text-sky-300 font-semibold';
+  }
+  if (ref.includes('naver')) {
+    return 'bg-emerald-500/15 border border-emerald-500/35 text-emerald-300 font-semibold';
+  }
+  if (ref.includes('kakao') || ref.includes('daum')) {
+    return 'bg-amber-500/15 border border-amber-500/35 text-amber-300 font-semibold';
+  }
+  if (ref.includes('instagram') || ref.includes('facebook') || ref.includes('threads')) {
+    return 'bg-pink-500/15 border border-pink-500/35 text-pink-300 font-semibold';
+  }
+  if (ref.includes('youtube')) {
+    return 'bg-rose-500/15 border border-rose-500/35 text-rose-300 font-semibold';
+  }
+  if (ref.includes('twitter') || ref.includes('t.co') || ref.includes('x.com')) {
+    return 'bg-blue-500/15 border border-blue-500/35 text-blue-300 font-semibold';
+  }
+
+  // 3. 그 외 외부 유입 사이트 (식별 가능한 인디고/보라 유채색 뱃지)
+  return 'bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 font-semibold';
+};
+
 // 프리셋 날짜 계산 헬퍼
 const getPresetDates = (preset: PresetType): { start: string; end: string } => {
   const now = new Date();
@@ -1136,7 +1170,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                                 </td>
                                 <td className="py-2.5 px-4 whitespace-nowrap">
                                   <span
-                                    className="inline-block max-w-[200px] truncate px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700/70 text-slate-300 text-[11px] font-medium"
+                                    className={`inline-block max-w-[200px] truncate px-2 py-0.5 rounded-md text-[11px] ${getReferrerBadgeStyle(refText)}`}
                                     title={refText}
                                   >
                                     {refText}
