@@ -46,14 +46,14 @@ export default function ContactPage() {
                   공식 고객 지원 채널
                 </span>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-sky-400" /> support@ws.ai.kr
+                  <Mail className="w-5 h-5 text-sky-400" /> jiyulain@gmail.com
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">
                   모든 문의 사항은 영업일 기준 24~48시간 이내에 면밀히 검토 후 회신드립니다.
                 </p>
               </div>
               <a
-                href="mailto:support@ws.ai.kr"
+                href="mailto:jiyulain@gmail.com"
                 className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm transition-colors shadow-lg shadow-sky-500/20"
               >
                 이메일 보내기

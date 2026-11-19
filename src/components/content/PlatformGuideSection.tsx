@@ -178,7 +178,7 @@ export const PlatformGuideSection: React.FC = () => {
               Q. 새로운 기능 제안이나 피드백을 전달하려면 어떻게 하나요?
             </h4>
             <p className="text-xs text-slate-400 leading-relaxed">
-              사이트 하단 &apos;문의하기&apos; 메뉴나 <a href="mailto:support@ws.ai.kr" className="text-sky-400 underline">support@ws.ai.kr</a>로 편하게 의견을 보내주시면 신규 기능 개발에 적극 반영됩니다.
+              사이트 하단 &apos;문의하기&apos; 메뉴나 <a href="mailto:jiyulain@gmail.com" className="text-sky-400 underline">jiyulain@gmail.com</a>로 편하게 의견을 보내주시면 신규 기능 개발에 적극 반영됩니다.
             </p>
           </div>
         </div>

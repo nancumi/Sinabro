@@ -105,8 +105,8 @@ export default function TermsPage() {
             <div className="flex items-center gap-2 p-3 bg-slate-900 rounded-lg text-slate-300">
               <Mail className="w-4 h-4 text-indigo-400" />
               <span>문의 이메일: </span>
-              <a href="mailto:support@ws.ai.kr" className="text-indigo-400 hover:underline">
-                support@ws.ai.kr
+              <a href="mailto:jiyulain@gmail.com" className="text-indigo-400 hover:underline">
+                jiyulain@gmail.com
               </a>
             </div>
           </section>

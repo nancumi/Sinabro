@@ -373,7 +373,7 @@ export default function HomePage() {
             <p>
               본 웹사이트의 모든 콘텐츠는 무료로 이용 가능하며, 공정한 오락 및 편의를 위해 제공됩니다.
             </p>
-            <p>© With Sinabro. All rights reserved. • Contact: support@ws.ai.kr</p>
+            <p>© With Sinabro. All rights reserved. • Contact: jiyulain@gmail.com</p>
           </div>
         </div>
       </footer>

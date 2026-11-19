@@ -119,7 +119,7 @@ export default function AboutPage() {
               시나브로는 이용자 여러분의 아이디어와 피드백으로 계속해서 진화합니다. 원하시는 새로운 미니게임이나 유틸리티 기능, 버그 제보가 있다면 언제든지 편하게 전해 주세요.
             </p>
             <p className="text-slate-400">
-              담당자 문의: <a href="mailto:support@ws.ai.kr" className="text-sky-400 hover:underline font-medium">support@ws.ai.kr</a>
+              담당자 문의: <a href="mailto:jiyulain@gmail.com" className="text-sky-400 hover:underline font-medium">jiyulain@gmail.com</a>
             </p>
           </section>
         </div>

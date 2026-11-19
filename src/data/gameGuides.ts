@@ -480,7 +480,7 @@ export const DEFAULT_GUIDE: GameGuide = {
     },
     {
       q: '문의 사항이나 기능 건의는 어디로 하나요?',
-      a: '하단 문의하기 메뉴 또는 support@ws.ai.kr 메일로 편하게 남겨주시면 신속히 반영해 드립니다.',
+      a: '하단 문의하기 메뉴 또는 jiyulain@gmail.com 메일로 편하게 남겨주시면 신속히 반영해 드립니다.',
     },
   ],
 };
