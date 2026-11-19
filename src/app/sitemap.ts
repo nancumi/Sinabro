@@ -23,6 +23,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { slug: 'chess', priority: 0.9 },
   ];
 
+  // 정적 정책 및 서비스 안내 페이지
+  const policyPages = [
+    { path: '/about', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/privacy', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/terms', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/contact', priority: 0.8, changeFrequency: 'monthly' as const },
+  ];
+
   return [
     {
       url: baseUrl,
@@ -30,6 +38,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'daily',
       priority: 1.0,
     },
+    ...policyPages.map((p) => ({
+      url: `${baseUrl}${p.path}`,
+      lastModified: now,
+      changeFrequency: p.changeFrequency,
+      priority: p.priority,
+    })),
     ...games.map((g) => ({
       url: `${baseUrl}/?game=${g.slug}`,
       lastModified: now,

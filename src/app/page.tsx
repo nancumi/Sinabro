@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { CategoryNav } from '@/components/layout/CategoryNav';
 import { ContentViewer } from '@/components/content/ContentViewer';
@@ -339,10 +340,41 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 푸터 */}
-      <footer className="w-full bg-slate-900 border-t border-slate-800 py-4 text-center text-slate-500 text-[11px]">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-center">
-          <span>© Sinabro. All rights reserved.</span>
+      {/* 고신뢰성 정식 푸터 (구글 애드센스 정책 준수) */}
+      <footer className="w-full bg-slate-950/95 border-t border-slate-800/80 py-8 text-slate-400 text-xs mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
+              <span className="font-extrabold text-white text-base tracking-tight">With Sinabro</span>
+              <span className="hidden sm:inline text-slate-600">|</span>
+              <span className="text-xs text-slate-400">스마트하게 즐기는 무료 웹 미니게임 & 유틸리티</span>
+            </div>
+            {/* 정책 및 신뢰성 네비게이션 */}
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium">
+              <Link href="/about" className="hover:text-white transition-colors">
+                사이트 소개
+              </Link>
+              <span className="text-slate-700">•</span>
+              <Link href="/privacy" className="hover:text-sky-300 text-sky-400 font-semibold transition-colors">
+                개인정보처리방침
+              </Link>
+              <span className="text-slate-700">•</span>
+              <Link href="/terms" className="hover:text-white transition-colors">
+                서비스 이용약관
+              </Link>
+              <span className="text-slate-700">•</span>
+              <Link href="/contact" className="hover:text-white transition-colors">
+                문의 및 피드백
+              </Link>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-500 text-center sm:text-left">
+            <p>
+              본 웹사이트의 모든 콘텐츠는 무료로 이용 가능하며, 공정한 오락 및 편의를 위해 제공됩니다.
+            </p>
+            <p>© With Sinabro. All rights reserved. • Contact: support@ws.ai.kr</p>
+          </div>
         </div>
       </footer>
 
