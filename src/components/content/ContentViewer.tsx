@@ -5,7 +5,6 @@ import { ContentItem } from '@/types';
 import { Settings, Sparkles, Plus, Play, Gamepad2, RefreshCw } from 'lucide-react';
 import { GAME_REGISTRY, getGameKey } from '@/games';
 import { ContentGuideSection } from './ContentGuideSection';
-import { PlatformGuideSection } from './PlatformGuideSection';
 
 interface ContentViewerProps {
   content: ContentItem | null;
@@ -37,39 +36,34 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
   // 0. 초기 접속 시 웰컴 대문 화면 (아직 콘텐츠를 선택하지 않은 상태)
   if (!content) {
     return (
-      <div className="w-full flex flex-col">
-        <div className="w-full min-h-[460px] bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl flex flex-col items-center justify-center p-8 text-center text-slate-400 select-none">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-sky-600/20 to-blue-500/20 text-sky-400 flex items-center justify-center mb-4 border border-sky-500/30 shadow-lg shadow-sky-500/10">
-            <Sparkles className="w-8 h-8 animate-pulse text-sky-400" />
-          </div>
-          <h3 className="text-base sm:text-lg font-black text-slate-100 mb-2">
-            즐길 콘텐츠를 선택해 주세요
-          </h3>
-          <p className="text-xs text-slate-400 max-w-sm mb-6 leading-relaxed">
-            상단 카테고리 메뉴를 누르거나 오른쪽 목록에서 원하는 게임 및 유용한 도구를 선택해 보세요!
-          </p>
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 text-xs font-semibold">
-              <Gamepad2 className="w-4 h-4 text-sky-400" />
-              <span>원하는 게임을 클릭하면 즉시 실행됩니다</span>
-            </div>
-
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={onOpenAdmin}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-sky-950/90 hover:bg-sky-900 text-sky-200 border border-sky-700/70 transition-all cursor-pointer shadow-sm"
-              >
-                <Plus className="w-3.5 h-3.5 text-sky-300" />
-                <span>새 콘텐츠 등록</span>
-              </button>
-            )}
-          </div>
+      <div className="w-full min-h-[460px] bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl flex flex-col items-center justify-center p-8 text-center text-slate-400 select-none">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-sky-600/20 to-blue-500/20 text-sky-400 flex items-center justify-center mb-4 border border-sky-500/30 shadow-lg shadow-sky-500/10">
+          <Sparkles className="w-8 h-8 animate-pulse text-sky-400" />
         </div>
+        <h3 className="text-base sm:text-lg font-black text-slate-100 mb-2">
+          즐길 콘텐츠를 선택해 주세요
+        </h3>
+        <p className="text-xs text-slate-400 max-w-sm mb-6 leading-relaxed">
+          상단 카테고리 메뉴를 누르거나 오른쪽 목록에서 원하는 게임 및 유용한 도구를 선택해 보세요!
+        </p>
 
-        {/* 메인 홈 접속 시 플랫폼 종합 소개 및 카테고리별 안내 (구글 애드센스 고품질 인벤토리) */}
-        <PlatformGuideSection />
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 text-xs font-semibold">
+            <Gamepad2 className="w-4 h-4 text-sky-400" />
+            <span>원하는 게임을 클릭하면 즉시 실행됩니다</span>
+          </div>
+
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={onOpenAdmin}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-sky-950/90 hover:bg-sky-900 text-sky-200 border border-sky-700/70 transition-all cursor-pointer shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5 text-sky-300" />
+              <span>새 콘텐츠 등록</span>
+            </button>
+          )}
+        </div>
       </div>
     );
   }
